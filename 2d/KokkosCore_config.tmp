@@ -1,0 +1,11 @@
+/* ---------------------------------------------
+Makefile constructed configuration:
+Wed 16 Mar 2016 09:52:35 GMT
+----------------------------------------------*/
+/* Execution Spaces */
+#define KOKKOS_HAVE_OPENMP 1
+#define KOKKOS_USE_ISA_X86_64
+/* General Settings */
+#define KOKKOS_HAVE_CXX11 1
+/* Optimization Settings */
+/* Cuda Settings */
