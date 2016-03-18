@@ -1,5 +1,5 @@
 # Used specified parameters
-KERNELS  	= mkl
+KERNELS  	= kokkos
 CPROFILER   = yes
 DEBUG       = no
 OPTIONS     = -DNO_MPI
