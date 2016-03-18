@@ -43,6 +43,8 @@ template <class Device>
 struct PPCGCalcUR
 {
     typedef Device device_type;
+    typedef Kokkos::TeamPolicy<Device> team_policy;
+    typedef typename team_policy::member_type team_member;
 
     PPCGCalcUR(const int x, const int y, const int halo_depth, KView sd, 
             KView r, KView u, KView kx, KView ky) 
@@ -50,18 +52,19 @@ struct PPCGCalcUR
         u(u), kx(kx), ky(ky) {}
 
     KOKKOS_INLINE_FUNCTION
-        void operator()(const int index) const 
+        void operator()(const team_member& team) const
         {
-            const int kk = index % x; 
-            const int jj = index / x; 
+            const int team_offset = (team.league_rank() + halo_depth)*y;
 
-            if(kk >= halo_depth && kk < x - halo_depth &&
-                    jj >= halo_depth && jj < y - halo_depth)
+            Kokkos::parallel_for(
+                Kokkos::TeamThreadRange(team, halo_depth, y-halo_depth),
+                [&] (const int &j)
             {
+                const int index = team_offset + j;
                 const double smvp = SMVP(sd);
                 r[index] -= smvp;
                 u[index] += sd[index];
-            }
+            });
         }
 
     const int x;
@@ -79,6 +82,8 @@ template <class Device>
 struct PPCGCalcSd
 {
     typedef Device device_type;
+    typedef Kokkos::TeamPolicy<Device> team_policy;
+    typedef typename team_policy::member_type team_member;
 
     PPCGCalcSd(const int x, const int y, const int halo_depth, const double theta, 
             const double alpha, const double beta, KView sd, KView r) 
@@ -86,17 +91,18 @@ struct PPCGCalcSd
         alpha(alpha), beta(beta), theta(theta) {}
 
     KOKKOS_INLINE_FUNCTION
-        void operator()(const int index) const 
-        {
-            const int kk = index % x; 
-            const int jj = index / x; 
+    void operator()(const team_member& team) const
+    {
+        const int team_offset = (team.league_rank() + halo_depth)*y;
 
-            if(kk >= halo_depth && kk < x - halo_depth &&
-                    jj >= halo_depth && jj < y - halo_depth)
-            {
-                sd[index] = alpha*sd[index] + beta*r[index];
-            }
-        }
+        Kokkos::parallel_for(
+            Kokkos::TeamThreadRange(team, halo_depth, y-halo_depth),
+            [&] (const int &j)
+        {
+            const int index = team_offset + j;
+            sd[index] = alpha*sd[index] + beta*r[index];
+        });
+    }
 
     const int x;
     const int y;
