@@ -37,10 +37,6 @@ void kernel_initialise(
         double** cg_alphas, double** cg_betas, double** cheby_alphas, 
         double** cheby_betas)
 {
-    print_and_log(settings,
-            "Performing this solve with the Kokkos %s solver\n",
-            settings->solver_name);
-
     Kokkos::initialize();
 
     *density0 = KView("density0", x*y);
@@ -68,8 +64,8 @@ void kernel_initialise(
     *vertex_x = KView("vertex_x", (x+1));
     *vertex_y = KView("vertex_y", (y+1));
 
-    *comms_buffer = KView("comms_buffer", MAX(x, y)*settings->halo_depth);
-    *host_comms_mirror = Kokkos::create_mirror_view(*comms_buffer);
+    //*comms_buffer = KView("comms_buffer", MAX(x, y)*settings->halo_depth);
+    //*host_comms_mirror = Kokkos::create_mirror_view(*comms_buffer);
 
     allocate_buffer(cg_alphas, settings->max_iters, 1);
     allocate_buffer(cg_betas, settings->max_iters, 1);
