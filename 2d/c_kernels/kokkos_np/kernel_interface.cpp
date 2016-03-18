@@ -236,7 +236,7 @@ void run_cg_calc_w(Chunk* chunk, Settings* settings, double* pw)
             chunk->p, chunk->kx, chunk->ky);
 
     parallel_reduce(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             cg_calc_w, *pw);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
@@ -252,7 +252,7 @@ void run_cg_calc_ur(
             chunk->p, chunk->w, alpha);
 
     parallel_reduce(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             cg_calc_ur, *rrn);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
@@ -266,7 +266,8 @@ void run_cg_calc_p(Chunk* chunk, Settings* settings, double beta)
             chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, chunk->r);
 
     parallel_for(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), cg_calc_p);
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
+            cg_calc_p);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
@@ -297,14 +298,14 @@ void run_cheby_iterate(
             chunk->kx, chunk->ky);
 
     parallel_for(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             cheby_iterate);
 
     ChebyCalcU<DEVICE> cheby_calc_u(
             chunk->x, chunk->y, settings->halo_depth, chunk->p, chunk->u);
 
     parallel_for(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             cheby_calc_u);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
@@ -368,7 +369,7 @@ void run_ppcg_inner_iteration(
             chunk->u, chunk->kx, chunk->ky);
 
     parallel_for(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             ppcg_calc_ur);
 
     PPCGCalcSd<DEVICE> ppcg_calc_sd(
@@ -376,7 +377,7 @@ void run_ppcg_inner_iteration(
             chunk->sd, chunk->r);
 
     parallel_for(
-            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, 1), 
+            TeamPolicy<DEVICE>(chunk->x - 2*settings->halo_depth, AUTO), 
             ppcg_calc_sd);
 
     STOP_PROFILING(settings->kernel_profile, __func__);

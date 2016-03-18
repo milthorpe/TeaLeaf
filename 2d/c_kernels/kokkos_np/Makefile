@@ -8,14 +8,15 @@ KOKKOS_TARGET ?= OPENMP
 # Kokkos target device settings
 # Currently constrained CUDA compilation
 ifeq ($(KOKKOS_TARGET), CUDA)
-  CXX			  = $(NVCC_WRAPPER)
-  KERNEL_COMPILER = nvcc
-  KERNEL_FLAGS	  = -ccbin g++ -std=c++11 -arch=sm_35 --expt-extended-lambda \
-					-restrict -Xcompiler "-O3 -fopenmp" $(KOKKOS_CPPFLAGS) \
- 					-I$(KERNELS_PATH) --x cu $(OPTIONS) -DCUDA
-  TL_LDFLAGS	 += -lcudart
-  KOKKOS_DEVICES  = "Cuda"
-  KOKKOS_ARCH 	  = "Kepler35"
+  CXX			       = $(NVCC_WRAPPER)
+  KERNEL_COMPILER      = nvcc
+  KERNEL_FLAGS	       = -ccbin g++ -std=c++11 -arch=sm_35 --expt-extended-lambda \
+				     	-restrict -Xcompiler "-O3 -fopenmp" $(KOKKOS_CPPFLAGS) \
+ 				     	-I$(KERNELS_PATH) --x cu $(OPTIONS) -DCUDA
+  KOKKOS_CUDA_OPTIONS  = "enable_lambda"
+  TL_LDFLAGS	      += -lcudart
+  KOKKOS_DEVICES       = "Cuda"
+  KOKKOS_ARCH 	       = "Kepler35"
 endif
 ifeq ($(KOKKOS_TARGET), OPENMP)
   CXX 			  = $(CPP)
