@@ -9,7 +9,7 @@ COMPILER    = INTEL
 
 # By default use C compiler and flags, may be overridden by implementation
 TL_LINK		= $(CC)
-TL_LDFLAGS	= #-lrt -lm
+TL_LDFLAGS	= -lrt -lm
 TL_COMPILER	= $(CC)
 TL_FLAGS	= $(CFLAGS)
 

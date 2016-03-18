@@ -252,7 +252,9 @@ void run_cg_calc_ur(
             chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->r, 
             chunk->p, chunk->w, alpha);
 
-    parallel_reduce(chunk->x*chunk->y, cg_calc_ur, *rrn);
+    parallel_reduce(
+            TeamPolicy<DEVICE>(chunk->x-2*settings->halo_depth, 1), 
+            cg_calc_ur, *rrn);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
@@ -262,10 +264,10 @@ void run_cg_calc_p(Chunk* chunk, Settings* settings, double beta)
     START_PROFILING(settings->kernel_profile);
 
     CGCalcP<DEVICE> cg_calc_p(
-            chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, 
-            chunk->r);
+            chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, chunk->r);
 
-    parallel_for(chunk->x*chunk->y, cg_calc_p);
+    parallel_for(
+            TeamPolicy<DEVICE>(chunk->x-2*settings->halo_depth, 1), cg_calc_p);
 
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
