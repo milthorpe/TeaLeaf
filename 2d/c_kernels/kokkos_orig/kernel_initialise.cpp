@@ -37,6 +37,10 @@ void kernel_initialise(
         double** cg_alphas, double** cg_betas, double** cheby_alphas, 
         double** cheby_betas)
 {
+    print_and_log(settings,
+            "Performing this solve with the Kokkos Functors %s solver\n",
+            settings->solver_name);
+
     Kokkos::initialize();
 
     *density0 = KView("density0", x*y);
