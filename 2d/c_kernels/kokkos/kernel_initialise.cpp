@@ -43,32 +43,33 @@ void kernel_initialise(
 
     Kokkos::initialize();
 
-    *density0 = KView("density0", x*y);
-    *density = KView("density", x*y);
-    *energy0 = KView("energy0", x*y);
-    *energy = KView("energy", x*y);
-    *u = KView("u", x*y);
-    *u0 = KView("u0", x*y);
-    *p = KView("p", x*y);
-    *r = KView("r", x*y);
-    *mi = KView("mi", x*y);
-    *w = KView("w", x*y);
-    *kx = KView("kx", x*y);
-    *ky = KView("ky", x*y);
-    *sd = KView("sd", x*y);
-    *volume = KView("volume", x*y);
-    *x_area = KView("x_area", (x+1)*y);
-    *y_area = KView("y_area", x*(y+1));
-    *cell_x = KView("cell_x", x);
-    *cell_y = KView("cell_y", y);
-    *cell_dx = KView("cell_dx", x);
-    *cell_dy = KView("cell_dy", y);
-    *vertex_dx = KView("vertex_dx", (x+1));
-    *vertex_dy = KView("vertex_dy", (y+1));
-    *vertex_x = KView("vertex_x", (x+1));
-    *vertex_y = KView("vertex_y", (y+1));
+    new(density0) KView("density0", x*y);
+    new(density) KView("density", x*y);
+    new(energy0) KView("energy0", x*y);
+    new(energy) KView("energy", x*y);
+    new(u) KView("u", x*y);
+    new(u0) KView("u0", x*y);
+    new(p) KView("p", x*y);
+    new(r) KView("r", x*y);
+    new(mi) KView("mi", x*y);
+    new(w) KView("w", x*y);
+    new(kx) KView("kx", x*y);
+    new(ky) KView("ky", x*y);
+    new(sd) KView("sd", x*y);
+    new(volume) KView("volume", x*y);
+    new(x_area) KView("x_area", (x+1)*y);
+    new(y_area) KView("y_area", x*(y+1));
+    new(cell_x) KView("cell_x", x);
+    new(cell_y) KView("cell_y", y);
+    new(cell_dx) KView("cell_dx", x);
+    new(cell_dy) KView("cell_dy", y);
+    new(vertex_dx) KView("vertex_dx", (x+1));
+    new(vertex_dy) KView("vertex_dy", (y+1));
+    new(vertex_x) KView("vertex_x", (x+1));
+    new(vertex_y) KView("vertex_y", (y+1));
 
-    *comms_buffer = KView("comms_buffer", MAX(x, y)*settings->halo_depth);
+    new(comms_buffer) KView("comms_buffer", MAX(x, y)*settings->halo_depth);
+    new(host_comms_mirror) KView::HostMirror(); 
     *host_comms_mirror = Kokkos::create_mirror_view(*comms_buffer);
 
     allocate_buffer(cg_alphas, settings->max_iters, 1);
