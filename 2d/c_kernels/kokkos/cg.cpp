@@ -67,19 +67,19 @@ void cg_calc_w(
         const int x, const int y, const int halo_depth, KView w, 
         KView p, KView kx, KView ky, double* pw) 
 {
-    const int x_inner = x - 2*halo_depth;
-    const int y_inner = y - 2*halo_depth;
-    const int off0 = halo_depth*(x + 1);
 
-    parallel_reduce(x_inner*y_inner, KOKKOS_LAMBDA (const int& i, double& pw_temp)
+    parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& pw_temp)
     {
-      const int col = i % x_inner;
-      const int row = i / x_inner;
-      const int index = off0 + col + row*x;
+      const size_t kk = index % x;
+      const size_t jj = index / x;
 
-      const double smvp = SMVP(p);
-      w(index) = smvp;
-      pw_temp += smvp*p(index);
+      if(kk >= halo_depth && kk < x - halo_depth &&
+         jj >= halo_depth && jj < y - halo_depth)
+      {
+          const double smvp = SMVP(p);
+          w(index) = smvp;
+          pw_temp += w(index)*p(index);
+      }
     }, *pw);
 }
 
