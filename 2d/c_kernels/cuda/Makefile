@@ -28,5 +28,5 @@ build_kernels: $(KERNEL_OBJS)
 	@echo "Built CUDA kernels"
 
 obj/$(KERNELS)/%.o: %.cu Makefile make.deps
-	$(KERNEL_COMPILER) $(KERNEL_FLAGS) -I$(KERNELS_PATH) -c $< -o $@
+	$(KERNEL_COMPILER) $(KERNEL_FLAGS) -I$(KERNELS_PATH) $(OPTIONS) -c $< -o $@
 

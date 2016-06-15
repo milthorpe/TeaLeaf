@@ -99,9 +99,11 @@ void read_settings(FILE* tea_in, Settings* settings)
             continue;
         if(starts_get_double("ymax", line, word, &settings->grid_y_max))
             continue;
-        if(starts_get_int("x_cells", line, word, &settings->grid_x_cells))
+        if(settings->grid_x_cells == DEF_GRID_X_CELLS &&
+                starts_get_int("x_cells", line, word, &settings->grid_x_cells))
             continue;
-        if(starts_get_int("y_cells", line, word, &settings->grid_y_cells))
+        if(settings->grid_y_cells == DEF_GRID_Y_CELLS &&
+                starts_get_int("y_cells", line, word, &settings->grid_y_cells))
             continue;
         if(starts_get_int("summary_frequency", line, word, &settings->summary_frequency))
             continue;
