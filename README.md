@@ -9,11 +9,11 @@ This application exists to avoid support issues created by the use of Fortran in
 
 ## Structure and Code elements
 
-In the root of the application are folders containing the 2d and 3d implementations. Ideally they would be consistent between them, but this is not currently the case, as the 2d version has received far more extensive development and testing.
+In the root of the application exists folders containing the 2d and 3d implementations. Ideally they would be consistent, however this is not currently the case as the 2d version has received far more extensive development and testing.
 
-The term kernel suite will be used throughout to denote one of the sets of kernel implementations included in the application, for instance there are existing OpenMP, CUDA etc kernel suites. Each of those kernel suites lives inside the c_kernels directory, and should be named with all lowercase letters, e.g. omp3.
+The term `kernel suite` will be used throughout to denote one of the sets of kernel implementations included in the application, for instance there are existing OpenMP, CUDA etc kernel suites. Each of those kernel suites lives inside the c_kernels directory, and should be named with a short name in all lowercase letters, e.g. `omp3`.
 
-The chunk.h header describes fields that are used by all of the kernels to some extent. In order to keep separation between the different implementations, this structure contains only those variables necessary for execution of the serial kernels. If some additional fields are required you can declare a ChunkExtension structure inside the kernel folder inside a file named chunk_extension.h. It will also be necessary to typedef the FieldBufferType, which allows the type of all arrays to be overload per kernel suite.
+In the root of 2d, the chunk.h header describes fields that are used by all of the kernels to some extent. In order to keep separation between the different implementations, this structure contains only those variables necessary for execution of the `serial` kernels. If some additional fields are required, you can declare a `ChunkExtension` structure inside the kernel suite folder, by adding it to the `chunk_extension.h` file. It will also be necessary to typedef the `FieldBufferType`, which allows the type of all data arrays in the `Chunk` structure to be overload per kernel suite.
 
 ## Compiling
 
