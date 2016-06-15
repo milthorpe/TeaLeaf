@@ -7,17 +7,32 @@ This implementation of TeaLeaf replicates the basic functionality of the referen
 
 This application exists to avoid support issues created by the use of Fortran in the original mini-app. Multiple versions of the kernels exist, including OpenMP (3.0 and 4.5), OpenACC, CUDA, Kokkos, RAJA. Adding kernels with new programming models is straightforward and a number of additional abstractions have been introduced to the host code in order to make this process easier.
 
-## Structure and Code elements
-
-In the root of the application exists folders containing the 2d and 3d implementations. Ideally they would be consistent, however this is not currently the case as the 2d version has received far more extensive development and testing.
-
-The term `kernel suite` will be used throughout to denote one of the sets of kernel implementations included in the application, for instance there are existing OpenMP, CUDA etc kernel suites. Each of those kernel suites lives inside the c_kernels directory, and should be named with a short name in all lowercase letters, e.g. `omp3`.
-
-In the root of 2d, the chunk.h header describes fields that are used by all of the kernels to some extent. In order to keep separation between the different implementations, this structure contains only those variables necessary for execution of the `serial` kernels. If some additional fields are required, you can declare a `ChunkExtension` structure inside the kernel suite folder, by adding it to the `chunk_extension.h` file. It will also be necessary to typedef the `FieldBufferType`, which allows the type of all data arrays in the `Chunk` structure to be overload per kernel suite.
-
-## Compiling
+## The Make system
 
  There is a single master Makefile in the root of the application and each set of kernels has it's own Makefile. The make system is not well tested for portability, so expect to adjust the kernel-specific Makefiles for particular architecture.
+ 
+ Unless you are looking to significantly change the structure of the application, it is likely that you will only need to adjust the user-defined parameters at the top of the Makefile.
+ 
+ `KERNELS` should match one of the kernel suite (see Structure and Code elements below) sub-directories, e.g. omp3 or raja.
+ 
+ `CPROFILER` accepts either `yes` or `no` and enables the lightweight C profiling tool for function level profiling.
+ 
+ `DEBUG` accepts `yes` or `no` and enable debugging flags
+ 
+ `OPTIONS` is for user defined options, useful for testing without major development. We support the -DNO_MPI flag to disable all MPI functionality, allowing the application to be built with standard compilers.
+ 
+ `CC` is the C compiler
+ 
+ `CPP` is the C++ compiler
+ 
+ `COMPILER` is a single upper case descriptor for the compiler being used, please see the `make.flags` file in order to see the existing compiler flags available.
+ 
+ Should additional adjustments to the make system be required, it is preferred that they are made in the Makefiles included in each of the kernel suites, to separate concerns as much as possible. It's probably best to look at the existing Makefiles for examples of how to create a new kernel suite Makefile. There are some aspects of the main make system that can be affected from within one of the kernel suite Makefiles.
+ 
+ The `TL_LINK`, `TL_COMPILER`, `TL_FLAGS`, and `TL_LDFLAGS` variables can be overloaded from within a kernel suite Makefile, in order to overload the compiler used for linking, and compilation, the compilation, and linking flags respectively.
+ 
+## Compiling
+
 
 If the MPI compilers have different names then the build process needs to 
 notified of this by defining two environment variables, `MPI_COMPILER` and 
@@ -252,3 +267,12 @@ This option uses the inverse density as the conduction coefficient.
 `test_problem <I>`
 
 This keyword selects a standard test with a "known" solution. Test problem 1 is automatically generated if the tea.in file does not exist. Test problems 2-5 are shipped in the TeaLeaf repository. Note that the known solution for an iterative solver is not an analytic solution but is the solution for a single core simulation with IEEE options enabled with the Intel compiler and a strict convergence of 1.0e-15. The difference to the expected solution is reported at the end of the simulation in the tea.out file. There is no default value for this option.
+
+
+## Structure and Code elements
+
+In the root of the application exists folders containing the 2d and 3d implementations. Ideally they would be consistent, however this is not currently the case as the 2d version has received far more extensive development and testing.
+
+The term `kernel suite` will be used throughout to denote one of the sets of kernel implementations included in the application, for instance there are existing OpenMP, CUDA etc kernel suites. Each of those kernel suites lives inside the c_kernels directory, and should be named with a short name in all lowercase letters, e.g. `omp3`.
+
+In the root of 2d, the chunk.h header describes fields that are used by all of the kernels to some extent. In order to keep separation between the different implementations, this structure contains only those variables necessary for execution of the `serial` kernels. If some additional fields are required, you can declare a `ChunkExtension` structure inside the kernel suite folder, by adding it to the `chunk_extension.h` file. It will also be necessary to typedef the `FieldBufferType`, which allows the type of all data arrays in the `Chunk` structure to be overload per kernel suite.
