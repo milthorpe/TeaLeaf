@@ -9,15 +9,15 @@ xmin                = 0.0
 ymin                = 0.0
 xmax                = 10.0
 ymax                = 10.0
-x_cells             = 4096
-y_cells             = 4096
+x_cells             = 64
+y_cells             = 64
 
 use_cg
 use_c_kernels
 check_result
 
 eps                 = 1.0e-15
-max_iters           = 50
+max_iters           = 100
 
 initial_timestep    = 0.004
 end_step            = 1
