@@ -65,9 +65,9 @@ void cg_init(
     }
   }
 
-  const int nb = 512;
-  double* reduce_temp = (double*)calloc(sizeof(double),nb);
-#pragma omp target teams distribute parallel for map(tofrom: reduce_temp[:nb]) //reduction(+:rro_temp)
+  double rro_temp = 0.0;
+#pragma omp target teams distribute parallel for \
+  collapse(2) map(tofrom:rro_temp) reduction(+:rro_temp)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = halo_depth; kk < x-halo_depth; ++kk)
@@ -77,14 +77,11 @@ void cg_init(
       w[index] = smvp;
       r[index] = u[index]-w[index];
       p[index] = r[index];
-#pragma omp critical
-      reduce_temp[omp_get_team_num()] += r[index]*p[index];
+      rro_temp += r[index]*p[index];
     }
   }
 
-  for(int ii = 0; ii < nb; ++ii) {
-    *rro += reduce_temp[ii];
-  }
+  *rro += rro_temp;
 }
 
 // Calculates w
@@ -98,9 +95,9 @@ void cg_calc_w(
     double* kx,
     double* ky)
 {
-  const int nb = 512;
-  double* reduce_temp = (double*)calloc(sizeof(double),nb);
-#pragma omp target teams distribute parallel for map(tofrom: reduce_temp[:nb]) //reduction(+:pw_temp)
+  double pw_temp = 0.0;
+#pragma omp target teams distribute parallel for \
+  collapse(2) map(tofrom:pw_temp) reduction(+:pw_temp)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = halo_depth; kk < x-halo_depth; ++kk)
@@ -109,14 +106,11 @@ void cg_calc_w(
       const double smvp = SMVP(p);
       w[index] = smvp;
 
-#pragma omp critical
-      reduce_temp[omp_get_team_num()] += w[index]*p[index];
+      pw_temp += w[index]*p[index];
     }
   }
 
-  for(int ii = 0; ii < nb; ++ii) {
-    *pw += reduce_temp[ii];
-  }
+  *pw += pw_temp;
 }
 
 // Calculates u and r
@@ -131,9 +125,9 @@ void cg_calc_ur(
     double* r,
     double* w)
 {
-  const int nb = 512;
-  double* reduce_temp = (double*)calloc(sizeof(double),nb);
-#pragma omp target teams distribute parallel for map(tofrom: reduce_temp[:nb]) //reduction(+:rrn_temp)
+  double rrn_temp = 0.0;
+#pragma omp target teams distribute parallel for \
+  collapse(2) map(tofrom:rrn_temp) reduction(+:rrn_temp)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = halo_depth; kk < x-halo_depth; ++kk)
@@ -143,14 +137,11 @@ void cg_calc_ur(
       u[index] += alpha*p[index];
       r[index] -= alpha*w[index];
 
-#pragma omp critical
-      reduce_temp[omp_get_team_num()] += r[index]*r[index];
+      rrn_temp += r[index]*r[index];
     }
   }
 
-  for(int ii = 0; ii < nb; ++ii) {
-    *rrn += reduce_temp[ii];
-  }
+  *rrn += rrn_temp;
 }
 
 // Calculates p
@@ -162,7 +153,7 @@ void cg_calc_p(
     double* p,
     double* r)
 {
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for collapse(2)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = halo_depth; kk < x-halo_depth; ++kk)

@@ -86,7 +86,8 @@ void update_left(
     double* buffer,
     bool is_offload)
 {
-#pragma omp target teams distribute parallel for if(is_offload)
+#pragma omp target teams distribute parallel for \
+  collapse(2) if(is_offload)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = 0; kk < depth; ++kk)
@@ -106,7 +107,8 @@ void update_right(
     double* buffer,
     bool is_offload)
 {
-#pragma omp target teams distribute parallel for if(is_offload)
+#pragma omp target teams distribute parallel for \
+  collapse(2) if(is_offload)
   for(int jj = halo_depth; jj < y-halo_depth; ++jj)
   {
     for(int kk = 0; kk < depth; ++kk)
