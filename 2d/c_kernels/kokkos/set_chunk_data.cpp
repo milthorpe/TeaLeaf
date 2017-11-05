@@ -43,8 +43,10 @@ void set_chunk_data(
             cell_y(index) = 0.5*(vertex_y(index)+vertex_y(index+1));
         }
 
-        volume(index) = dx*dy;
-        x_area(index) = dy;
-        y_area(index) = dx;
+        if(index < x*y) {
+         volume(index) = dx*dy;
+         x_area(index) = dy;
+         y_area(index) = dx;
+        }
     });
 }

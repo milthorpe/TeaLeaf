@@ -17,150 +17,150 @@ using Kokkos::parallel_for;
 using Kokkos::parallel_reduce;
 
 void kernel_initialise(
-        Settings* settings, int x, int y, KView* density0, 
-        KView* density, KView* energy0, KView* energy, KView* u, 
-        KView* u0, KView* p, KView* r, KView* mi, 
-        KView* w, KView* kx, KView* ky, KView* sd, 
-        KView* volume, KView* x_area, KView* y_area, KView* cell_x, 
-        KView* cell_y, KView* cell_dx, KView* cell_dy, KView* vertex_dx, 
-        KView* vertex_dy, KView* vertex_x, KView* vertex_y, KView* comms_buffer,
-        Kokkos::View<double*>::HostMirror* host_comms_mirror, 
-        double** cg_alphas, double** cg_betas, double** cheby_alphas, 
-        double** cheby_betas);
+    Settings* settings, int x, int y, KView* density0, 
+    KView* density, KView* energy0, KView* energy, KView* u, 
+    KView* u0, KView* p, KView* r, KView* mi, 
+    KView* w, KView* kx, KView* ky, KView* sd, 
+    KView* volume, KView* x_area, KView* y_area, KView* cell_x, 
+    KView* cell_y, KView* cell_dx, KView* cell_dy, KView* vertex_dx, 
+    KView* vertex_dy, KView* vertex_x, KView* vertex_y, KView* comms_buffer,
+    Kokkos::View<double*>::HostMirror* host_comms_mirror, 
+    double** cg_alphas, double** cg_betas, double** cheby_alphas, 
+    double** cheby_betas);
 
 void kernel_finalise(
-        double* cg_alphas, double* cg_betas, double* cheby_alphas, 
-        double* cheby_betas);
+    double* cg_alphas, double* cg_betas, double* cheby_alphas, 
+    double* cheby_betas);
 
 void run_set_chunk_data(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    double x_min = settings->grid_x_min + settings->dx*(double)chunk->left;
-    double y_min = settings->grid_y_min + settings->dy*(double)chunk->bottom;
+  double x_min = settings->grid_x_min + settings->dx*(double)chunk->left;
+  double y_min = settings->grid_y_min + settings->dy*(double)chunk->bottom;
 
-	SetChunkDataVertices<DEVICE> set_chunk_data_vertices(
-			chunk->x, chunk->y, settings->halo_depth, chunk->vertex_x, 
-            chunk->vertex_y, x_min, y_min, settings->dx, settings->dy);
+  SetChunkDataVertices<DEVICE> set_chunk_data_vertices(
+      chunk->x, chunk->y, settings->halo_depth, chunk->vertex_x, 
+      chunk->vertex_y, x_min, y_min, settings->dx, settings->dy);
 
-    parallel_for(MAX(chunk->x,chunk->y)+1, set_chunk_data_vertices);
-	
-    SetChunkData<DEVICE> set_chunk_data(
-            chunk->x, chunk->y, settings->halo_depth, chunk->vertex_x, 
-            chunk->vertex_y, chunk->cell_x, chunk->cell_y, chunk->volume, 
-            chunk->x_area, chunk->y_area, x_min, y_min, 
-            settings->dx, settings->dy);
+  parallel_for(MAX(chunk->x,chunk->y)+1, set_chunk_data_vertices);
 
-    parallel_for(chunk->x*chunk->y, set_chunk_data);
+  SetChunkData<DEVICE> set_chunk_data(
+      chunk->x, chunk->y, settings->halo_depth, chunk->vertex_x, 
+      chunk->vertex_y, chunk->cell_x, chunk->cell_y, chunk->volume, 
+      chunk->x_area, chunk->y_area, x_min, y_min, 
+      settings->dx, settings->dy);
+
+  parallel_for(chunk->x*chunk->y, set_chunk_data);
 
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_set_chunk_state(Chunk* chunk, Settings* settings, State* states)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    SetChunkInitialState<DEVICE> set_chunk_initial_state(
-            states[0].energy, states[0].density, chunk->energy0, chunk->density);
+  SetChunkInitialState<DEVICE> set_chunk_initial_state(
+      states[0].energy, states[0].density, chunk->energy0, chunk->density);
 
-    parallel_for(chunk->x*chunk->y, set_chunk_initial_state);
+  parallel_for(chunk->x*chunk->y, set_chunk_initial_state);
 
-    for(int ii = 1; ii < settings->num_states; ++ii)
-    {
-        SetChunkState<DEVICE> set_chunk_state(
-                chunk->x, chunk->y, settings->halo_depth, states[ii], 
-                chunk->energy0, chunk->density, chunk->u, chunk->cell_x, 
-                chunk->cell_y, chunk->vertex_x, chunk->vertex_y);
+  for(int ii = 1; ii < settings->num_states; ++ii)
+  {
+    SetChunkState<DEVICE> set_chunk_state(
+        chunk->x, chunk->y, settings->halo_depth, states[ii], 
+        chunk->energy0, chunk->density, chunk->u, chunk->cell_x, 
+        chunk->cell_y, chunk->vertex_x, chunk->vertex_y);
 
-        parallel_for(chunk->x*chunk->y, set_chunk_state);
-    }
+    parallel_for(chunk->x*chunk->y, set_chunk_state);
+  }
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_kernel_initialise(Chunk* chunk, Settings* settings)
 {
-    kernel_initialise(settings, chunk->x, chunk->y, &(chunk->density0), 
-            &(chunk->density), &(chunk->energy0), &(chunk->energy), 
-            &(chunk->u), &(chunk->u0), &(chunk->p), &(chunk->r), 
-            &(chunk->mi), &(chunk->w), &(chunk->kx), &(chunk->ky), 
-            &(chunk->sd), &(chunk->volume), &(chunk->x_area), &(chunk->y_area),
-            &(chunk->cell_x), &(chunk->cell_y), &(chunk->cell_dx), 
-            &(chunk->cell_dy), &(chunk->vertex_dx), &(chunk->vertex_dy), 
-            &(chunk->vertex_x), &(chunk->vertex_y), &(chunk->ext->comms_buffer),
-            &(chunk->ext->host_comms_mirror), &(chunk->cg_alphas), 
-            &(chunk->cg_betas), &(chunk->cheby_alphas), &(chunk->cheby_betas));
+  kernel_initialise(settings, chunk->x, chunk->y, &(chunk->density0), 
+      &(chunk->density), &(chunk->energy0), &(chunk->energy), 
+      &(chunk->u), &(chunk->u0), &(chunk->p), &(chunk->r), 
+      &(chunk->mi), &(chunk->w), &(chunk->kx), &(chunk->ky), 
+      &(chunk->sd), &(chunk->volume), &(chunk->x_area), &(chunk->y_area),
+      &(chunk->cell_x), &(chunk->cell_y), &(chunk->cell_dx), 
+      &(chunk->cell_dy), &(chunk->vertex_dx), &(chunk->vertex_dy), 
+      &(chunk->vertex_x), &(chunk->vertex_y), &(chunk->ext->comms_buffer),
+      &(chunk->ext->host_comms_mirror), &(chunk->cg_alphas), 
+      &(chunk->cg_betas), &(chunk->cheby_alphas), &(chunk->cheby_betas));
 }
 
 void run_kernel_finalise(Chunk* chunk, Settings* settings)
 {    
-    kernel_finalise(
-            chunk->cg_alphas, chunk->cg_betas, chunk->cheby_alphas, 
-            chunk->cheby_betas);
+  kernel_finalise(
+      chunk->cg_alphas, chunk->cg_betas, chunk->cheby_alphas, 
+      chunk->cheby_betas);
 }
 
 // Solver-wide kernels
 void run_local_halos(
-        Chunk* chunk, Settings* settings, int depth)
+    Chunk* chunk, Settings* settings, int depth)
 {
 #define UPDATE_FACE(face, buffer, n) \
-    if(chunk->neighbours[face] == EXTERNAL_FACE) \
-    { \
-        START_PROFILING(settings->kernel_profile); \
-        LocalHalos<DEVICE> local_halos( \
-                chunk->x, chunk->y, settings->halo_depth, buffer, face, depth); \
-        parallel_for(n, local_halos); \
-        STOP_PROFILING(settings->kernel_profile, #face); \
-    }
+  if(chunk->neighbours[face] == EXTERNAL_FACE) \
+  { \
+    START_PROFILING(settings->kernel_profile); \
+    LocalHalos<DEVICE> local_halos( \
+        chunk->x, chunk->y, settings->halo_depth, buffer, face, depth); \
+    parallel_for(n, local_halos); \
+    STOP_PROFILING(settings->kernel_profile, #face); \
+  }
 
 #define LAUNCH_UPDATE(index, buffer) \
-    if(settings->fields_to_exchange[index]) \
-    {\
-        UPDATE_FACE(CHUNK_LEFT, buffer, chunk->y*depth); \
-        UPDATE_FACE(CHUNK_RIGHT, buffer, chunk->y*depth); \
-        UPDATE_FACE(CHUNK_TOP, buffer, chunk->x*depth); \
-        UPDATE_FACE(CHUNK_BOTTOM, buffer, chunk->x*depth); \
-    }
+  if(settings->fields_to_exchange[index]) \
+  {\
+    UPDATE_FACE(CHUNK_LEFT, buffer, chunk->y*depth); \
+    UPDATE_FACE(CHUNK_RIGHT, buffer, chunk->y*depth); \
+    UPDATE_FACE(CHUNK_TOP, buffer, chunk->x*depth); \
+    UPDATE_FACE(CHUNK_BOTTOM, buffer, chunk->x*depth); \
+  }
 
-    LAUNCH_UPDATE(FIELD_DENSITY, chunk->density);
-    LAUNCH_UPDATE(FIELD_P, chunk->p);
-    LAUNCH_UPDATE(FIELD_ENERGY0, chunk->energy0);
-    LAUNCH_UPDATE(FIELD_ENERGY1, chunk->energy);
-    LAUNCH_UPDATE(FIELD_U, chunk->u);
-    LAUNCH_UPDATE(FIELD_SD, chunk->sd);
+  LAUNCH_UPDATE(FIELD_DENSITY, chunk->density);
+  LAUNCH_UPDATE(FIELD_P, chunk->p);
+  LAUNCH_UPDATE(FIELD_ENERGY0, chunk->energy0);
+  LAUNCH_UPDATE(FIELD_ENERGY1, chunk->energy);
+  LAUNCH_UPDATE(FIELD_U, chunk->u);
+  LAUNCH_UPDATE(FIELD_SD, chunk->sd);
 }
 
 void run_pack_or_unpack(
-        Chunk* chunk, Settings* settings, int depth,
-        int face, bool pack, KView field, double* buffer)
+    Chunk* chunk, Settings* settings, int depth,
+    int face, bool pack, KView field, double* buffer)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    const int buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
-        ? chunk->y*depth : chunk->x*depth;
+  const int buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
+    ? chunk->y*depth : chunk->x*depth;
 
-    if(!pack)
-    {
-        KokkosHelper::PackMirror<double>(
-                chunk->ext->host_comms_mirror, buffer, buffer_length);
-        Kokkos::deep_copy(chunk->ext->comms_buffer, chunk->ext->host_comms_mirror); 
-    }
+  if(!pack)
+  {
+    KokkosHelper::PackMirror<double>(
+        chunk->ext->host_comms_mirror, buffer, buffer_length);
+    Kokkos::deep_copy(chunk->ext->comms_buffer, chunk->ext->host_comms_mirror); 
+  }
 
-    HaloPacker<DEVICE> halo_packer(
-            chunk->x, chunk->y, settings->halo_depth, 
-            chunk->ext->comms_buffer, field, depth, face, pack);
+  HaloPacker<DEVICE> halo_packer(
+      chunk->x, chunk->y, settings->halo_depth, 
+      chunk->ext->comms_buffer, field, depth, face, pack);
 
-    parallel_for(buffer_length, halo_packer);
+  parallel_for(buffer_length, halo_packer);
 
-    if(pack)
-    {
-        Kokkos::deep_copy(chunk->ext->host_comms_mirror, chunk->ext->comms_buffer);
-        KokkosHelper::UnpackMirror<double>(
-                buffer, chunk->ext->host_comms_mirror, buffer_length);
-    }
+  if(pack)
+  {
+    Kokkos::deep_copy(chunk->ext->host_comms_mirror, chunk->ext->comms_buffer);
+    KokkosHelper::UnpackMirror<double>(
+        buffer, chunk->ext->host_comms_mirror, buffer_length);
+  }
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_store_energy(Chunk* chunk, Settings* settings)

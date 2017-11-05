@@ -13,7 +13,6 @@ void update_left(
         const size_t flip = index % depth;
         const size_t lines = index/depth;
         const size_t offset = lines*(x - depth);
-
         const size_t to_index = offset + halo_depth - depth + index;
         const size_t from_index = to_index + 2*(depth - flip) - 1;
         buffer(to_index) = buffer(from_index);
@@ -30,7 +29,6 @@ void update_right(
         const size_t flip = index % depth;
         const size_t lines = index/depth;
         const size_t offset = x-halo_depth + lines*(x-depth);
-
         const size_t to_index = offset+index;
         const size_t from_index = to_index-(1+flip*2);
         buffer(to_index) = buffer(from_index);
