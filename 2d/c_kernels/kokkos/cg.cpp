@@ -11,11 +11,16 @@ void cg_init_u(
 {
     parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
+        const size_t kk = index % x; 
+        const size_t jj = index / x; 
+
         p(index) = 0.0;
         r(index) = 0.0;
         u(index) = energy(index)*density(index);
-        w(index) = (coefficient == CONDUCTIVITY) 
+        if(jj > 0 && jj < y-1 && kk > 0 & kk < x-1) {
+          w(index) = (coefficient == CONDUCTIVITY) 
             ? density(index) : 1.0/density(index);
+        }
     });
 }
 
@@ -88,19 +93,18 @@ void cg_calc_ur(
         const int x, const int y, const int halo_depth, KView u, 
         KView r, KView p, KView w, const double alpha, double* rrn) 
 {
-    const int x_inner = x - 2*halo_depth;
-    const int y_inner = y - 2*halo_depth;
-    const int off0 = halo_depth*(x + 1);
-
-    parallel_reduce(x_inner*y_inner, KOKKOS_LAMBDA (const int& i, double& rrn_temp)
+    parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& rrn_temp)
     {
-      const int col = i % x_inner;
-      const int row = i / x_inner;
-      const int index = off0 + col + row*x;
+       const int kk = index % x; 
+       const int jj = index / x; 
 
-      u(index) += alpha*p(index);
-      const double r_idx = r(index) - alpha*w(index);
-      rrn_temp += r_idx*r_idx;
+       if(kk >= halo_depth && kk < x - halo_depth &&
+         jj >= halo_depth && jj < y - halo_depth)
+       {
+       u(index) += alpha*p(index);
+       r(index) -= alpha*w(index);
+       rrn_temp += r(index)*r(index);
+       }
     }, *rrn);
 }
 
@@ -109,17 +113,15 @@ void cg_calc_p(
         const int x, const int y, const int halo_depth, const double beta, 
         KView p, KView r) 
 {
-    const int x_inner = x - 2*halo_depth;
-    const int y_inner = y - 2*halo_depth;
-    const int off0 = halo_depth*(x + 1);
-
-    parallel_for(x_inner*y_inner, KOKKOS_LAMBDA (const int& i)
+    parallel_for(x*y, KOKKOS_LAMBDA (const int& index)
     {
-      const int col = i % x_inner;
-      const int row = i / x_inner;
-      const int index = off0 + col + row*x;
+       const int kk = index % x; 
+       const int jj = index / x; 
 
-      p(index) = beta*p(index) + r(index);
+       if(kk >= halo_depth && kk < x - halo_depth &&
+         jj >= halo_depth && jj < y - halo_depth) {
+            p(index) = beta*p(index) + r(index);
+      }
     });
 }
 

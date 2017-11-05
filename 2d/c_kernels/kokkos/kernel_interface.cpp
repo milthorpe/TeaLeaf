@@ -116,23 +116,23 @@ void run_pack_or_unpack(
 {
     START_PROFILING(settings->kernel_profile);
 
-    const size_t buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
-        ? (chunk->x-2*settings->halo_depth)*depth 
-        : (chunk->y-2*settings->halo_depth)*depth;
+    const int buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
+      ? chunk->y*depth : chunk->x*depth;
 
     if(!pack)
     {
-        KokkosHelper::PackMirror<double>(
-                chunk->ext->host_comms_mirror, buffer, buffer_length); 
-        Kokkos::deep_copy(chunk->ext->comms_buffer, chunk->ext->host_comms_mirror); 
+      KokkosHelper::PackMirror<double>(
+          chunk->ext->host_comms_mirror, buffer, buffer_length);
+      Kokkos::deep_copy(chunk->ext->comms_buffer, chunk->ext->host_comms_mirror); 
     }
+
 
 #define PACK_HALO(face_val, pack_val, pack_kernel) \
     if(face == face_val && pack == pack_val)\
     {\
-        pack_kernel(\
-            chunk->x, chunk->y, settings->halo_depth, \
-            chunk->ext->comms_buffer, field, depth);\
+      pack_kernel(\
+          chunk->x, chunk->y, settings->halo_depth, \
+          chunk->ext->comms_buffer, field, depth);\
     }
 
     PACK_HALO(CHUNK_LEFT, pack, pack_left);
@@ -144,229 +144,230 @@ void run_pack_or_unpack(
     PACK_HALO(CHUNK_BOTTOM, !pack, unpack_bottom);
     PACK_HALO(CHUNK_TOP, !pack, unpack_top);
 
-    if(pack)
-    {
-        Kokkos::deep_copy(chunk->ext->host_comms_mirror, chunk->ext->comms_buffer);
-        KokkosHelper::UnpackMirror<double>(
-                buffer, chunk->ext->host_comms_mirror, buffer_length);
-    }
+  if(pack)
+  {
+    Kokkos::deep_copy(chunk->ext->host_comms_mirror, chunk->ext->comms_buffer);
+    KokkosHelper::UnpackMirror<double>(
+        buffer, chunk->ext->host_comms_mirror, buffer_length);
+  }
+
 
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_store_energy(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    store_energy(chunk->x, chunk->y, chunk->energy, chunk->energy0);
+  store_energy(chunk->x, chunk->y, chunk->energy, chunk->energy0);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_field_summary(
-        Chunk* chunk, Settings* settings, 
-        double* vol, double* mass, double* ie, double* temp)
+    Chunk* chunk, Settings* settings, 
+    double* vol, double* mass, double* ie, double* temp)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    FieldSummary<DEVICE> field_summary(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->density, 
-            chunk->energy0, chunk->volume);
+  FieldSummary<DEVICE> field_summary(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->density, 
+      chunk->energy0, chunk->volume);
 
-    FieldSummary<DEVICE>::value_type result;
+  FieldSummary<DEVICE>::value_type result;
 
-    parallel_reduce(chunk->x*chunk->y, field_summary, result);
+  parallel_reduce(chunk->x*chunk->y, field_summary, result);
 
-    *vol = result.vol;
-    *mass = result.mass;
-    *ie = result.ie;
-    *temp = result.temp;
+  *vol = result.vol;
+  *mass = result.mass;
+  *ie = result.ie;
+  *temp = result.temp;
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // CG solver kernels
 void run_cg_init(
-        Chunk* chunk, Settings* settings, 
-        double rx, double ry, double* rro)
+    Chunk* chunk, Settings* settings, 
+    double rx, double ry, double* rro)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cg_init_u(
-            chunk->x, chunk->y, settings->coefficient, chunk->p, chunk->r, chunk->u, 
-            chunk->w, chunk->density, chunk->energy);
+  cg_init_u(
+      chunk->x, chunk->y, settings->coefficient, chunk->p, chunk->r, chunk->u, 
+      chunk->w, chunk->density, chunk->energy);
 
-    cg_init_k(
-            chunk->x, chunk->y, settings->halo_depth, chunk->w, chunk->kx, 
-            chunk->ky, rx, ry);
+  cg_init_k(
+      chunk->x, chunk->y, settings->halo_depth, chunk->w, chunk->kx, 
+      chunk->ky, rx, ry);
 
-    cg_init_others(
-            chunk->x, chunk->y, settings->halo_depth, chunk->kx, chunk->ky, 
-            chunk->p, chunk->r, chunk->u, chunk->w, rro);
+  cg_init_others(
+      chunk->x, chunk->y, settings->halo_depth, chunk->kx, chunk->ky, 
+      chunk->p, chunk->r, chunk->u, chunk->w, rro);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_w(Chunk* chunk, Settings* settings, double* pw)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cg_calc_w(
-            chunk->x, chunk->y, settings->halo_depth, chunk->w, 
-            chunk->p, chunk->kx, chunk->ky, pw);
+  cg_calc_w(
+      chunk->x, chunk->y, settings->halo_depth, chunk->w, 
+      chunk->p, chunk->kx, chunk->ky, pw);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_ur(
-        Chunk* chunk, Settings* settings, double alpha, double* rrn)
+    Chunk* chunk, Settings* settings, double alpha, double* rrn)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cg_calc_ur(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->r, 
-            chunk->p, chunk->w, alpha, rrn);
+  cg_calc_ur(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->r, 
+      chunk->p, chunk->w, alpha, rrn);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_p(Chunk* chunk, Settings* settings, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cg_calc_p(
-            chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, 
-            chunk->r);
+  cg_calc_p(
+      chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, 
+      chunk->r);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Chebyshev solver kernels
 void run_cheby_init(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cheby_init(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
-            chunk->p, chunk->r, chunk->u, chunk->u0, chunk->w, 
-            chunk->kx, chunk->ky);
+  cheby_init(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
+      chunk->p, chunk->r, chunk->u, chunk->u0, chunk->w, 
+      chunk->kx, chunk->ky);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cheby_iterate(
-        Chunk* chunk, Settings* settings, double alpha, double beta)
+    Chunk* chunk, Settings* settings, double alpha, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    cheby_iterate(
-            chunk->x, chunk->y, settings->halo_depth, alpha, beta, chunk->p, 
-            chunk->r, chunk->u, chunk->u0, chunk->w, 
-            chunk->kx, chunk->ky);
+  cheby_iterate(
+      chunk->x, chunk->y, settings->halo_depth, alpha, beta, chunk->p, 
+      chunk->r, chunk->u, chunk->u0, chunk->w, 
+      chunk->kx, chunk->ky);
 
-    cheby_calc_u(
-            chunk->x, chunk->y, settings->halo_depth, chunk->p, chunk->u);
+  cheby_calc_u(
+      chunk->x, chunk->y, settings->halo_depth, chunk->p, chunk->u);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Jacobi solver kernels
 void run_jacobi_init(
-        Chunk* chunk, Settings* settings, double rx, double ry)
+    Chunk* chunk, Settings* settings, double rx, double ry)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    jacobi_init(
-            chunk->x, chunk->y, settings->halo_depth, 
-            settings->coefficient, rx, ry, chunk->u, chunk->u0, 
-            chunk->density, chunk->energy, chunk->kx, chunk->ky);
+  jacobi_init(
+      chunk->x, chunk->y, settings->halo_depth, 
+      settings->coefficient, rx, ry, chunk->u, chunk->u0, 
+      chunk->density, chunk->energy, chunk->kx, chunk->ky);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_jacobi_iterate(
-        Chunk* chunk, Settings* settings, double* error)
+    Chunk* chunk, Settings* settings, double* error)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    jacobi_copy_u(
-            chunk->x, chunk->y, chunk->r, chunk->u);
+  jacobi_copy_u(
+      chunk->x, chunk->y, chunk->r, chunk->u);
 
-    jacobi_iterate(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->u0, chunk->r, chunk->kx, chunk->ky, error);
+  jacobi_iterate(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->u0, chunk->r, chunk->kx, chunk->ky, error);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // PPCG solver kernels
 void run_ppcg_init(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    ppcg_init(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
-            chunk->sd, chunk->r);
+  ppcg_init(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
+      chunk->sd, chunk->r);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_ppcg_inner_iteration(
-        Chunk* chunk, Settings* settings, double alpha, double beta)
+    Chunk* chunk, Settings* settings, double alpha, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    ppcg_calc_ur(
-            chunk->x, chunk->y, settings->halo_depth, chunk->sd, chunk->r, 
-            chunk->u, chunk->kx, chunk->ky);
+  ppcg_calc_ur(
+      chunk->x, chunk->y, settings->halo_depth, chunk->sd, chunk->r, 
+      chunk->u, chunk->kx, chunk->ky);
 
-    ppcg_calc_sd(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, alpha, beta, 
-            chunk->sd, chunk->r);
+  ppcg_calc_sd(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, alpha, beta, 
+      chunk->sd, chunk->r);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Shared solver kernels
 void run_copy_u(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    copy_u(chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->u0);
+  copy_u(chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->u0);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_calculate_residual(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    calculate_residual(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->u0, chunk->r, chunk->kx, chunk->ky);
+  calculate_residual(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->u0, chunk->r, chunk->kx, chunk->ky);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_calculate_2norm(
-        Chunk* chunk, Settings* settings, KView buffer, double* norm)
+    Chunk* chunk, Settings* settings, KView buffer, double* norm)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    calculate_2norm(
-            chunk->x, chunk->y, settings->halo_depth, buffer, norm);
+  calculate_2norm(
+      chunk->x, chunk->y, settings->halo_depth, buffer, norm);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_finalise(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    finalise(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->density, chunk->energy);
+  finalise(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->density, chunk->energy);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 

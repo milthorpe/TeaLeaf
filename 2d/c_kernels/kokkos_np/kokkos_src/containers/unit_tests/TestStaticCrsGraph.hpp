@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,7 +36,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
@@ -71,7 +71,7 @@ void run_test_graph()
   }
 
   dx = Kokkos::create_staticcrsgraph<dView>( "dx" , graph );
-    hx = Kokkos::create_mirror( dx );
+  hx = Kokkos::create_mirror( dx );
 
   ASSERT_EQ( hx.row_map.dimension_0() - 1 , LENGTH );
 
@@ -81,6 +81,16 @@ void run_test_graph()
     ASSERT_EQ( n , graph[i].size() );
     for ( size_t j = 0 ; j < n ; ++j ) {
       ASSERT_EQ( (int) hx.entries( j + begin ) , graph[i][j] );
+    }
+  }
+
+  // Test row view access
+  for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+    auto rowView = hx.rowConst(i);
+    ASSERT_EQ( rowView.length, graph[i].size() );
+    for ( size_t j = 0 ; j < rowView.length ; ++j ) {
+      ASSERT_EQ( rowView.colidx( j ) , graph[i][j] );
+      ASSERT_EQ( rowView( j )        , graph[i][j] );
     }
   }
 }
@@ -144,6 +154,44 @@ void run_test_graph2()
   }
 }
 
-} /* namespace TestStaticCrsGraph */
+template< class Space >
+void run_test_graph3(size_t B, size_t N)
+{
+  srand(10310);
 
+  typedef Kokkos::StaticCrsGraph< int , Space > dView ;
+  typedef typename dView::HostMirror hView ;
+
+  const unsigned LENGTH = 2000 ;
+
+  std::vector< size_t > sizes( LENGTH );
+
+  size_t total_length = 0 ;
+
+  for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+    sizes[i] = rand()%1000;
+  }
+
+  sizes[1] = N;
+  sizes[1998] = N;
+
+  for ( size_t i = 0 ; i < LENGTH ; ++i ) {
+    total_length += sizes[i];
+  }
+
+  int C = 0;
+  dView dx = Kokkos::create_staticcrsgraph<dView>( "test" , sizes );
+  dx.create_block_partitioning(B,C);
+  hView hx = Kokkos::create_mirror( dx );
+
+  for( size_t i = 0; i<B; i++) {
+    size_t ne = 0;
+    for(size_t j = hx.row_block_offsets(i); j<hx.row_block_offsets(i+1); j++)
+      ne += hx.row_map(j+1)-hx.row_map(j)+C;
+
+    ASSERT_FALSE((ne>2*((hx.row_map(hx.numRows())+C*hx.numRows())/B))&&(hx.row_block_offsets(i+1)>hx.row_block_offsets(i)+1));
+  }
+}
+
+} /* namespace TestStaticCrsGraph */
 

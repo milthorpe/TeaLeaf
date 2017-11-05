@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -36,13 +36,17 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 */
 
-#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE )
-#define KOKKOS_MEMORY_FENCE
+#include <Kokkos_Macros.hpp>
+#if defined( KOKKOS_ATOMIC_HPP ) && ! defined( KOKKOS_MEMORY_FENCE_HPP )
+#define KOKKOS_MEMORY_FENCE_HPP
+
+#include <atomic>
+
 namespace Kokkos {
 
 //----------------------------------------------------------------------------
@@ -50,19 +54,10 @@ namespace Kokkos {
 KOKKOS_FORCEINLINE_FUNCTION
 void memory_fence()
 {
-#if defined( KOKKOS_ATOMICS_USE_CUDA )
+#if defined( __CUDA_ARCH__ )
   __threadfence();
-#elif defined( KOKKOS_ATOMICS_USE_GCC ) || \
-      ( defined( KOKKOS_COMPILER_NVCC ) && defined( KOKKOS_ATOMICS_USE_INTEL ) )
-  __sync_synchronize();
-#elif defined( KOKKOS_ATOMICS_USE_INTEL )
-  _mm_mfence();
-#elif defined( KOKKOS_ATOMICS_USE_OMP31 )
-  #pragma omp flush
-#elif defined( KOKKOS_ATOMICS_USE_WINDOWS )
-  MemoryBarrier();
 #else
- #error "Error: memory_fence() not defined"
+  std::atomic_thread_fence( std::memory_order_seq_cst );
 #endif
 }
 
@@ -74,12 +69,10 @@ void memory_fence()
 KOKKOS_FORCEINLINE_FUNCTION
 void store_fence()
 {
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"sfence" ::: "memory"
-  	);
+#if defined( __CUDA_ARCH__ )
+  __threadfence();
 #else
-  memory_fence();
+  std::atomic_thread_fence( std::memory_order_seq_cst );
 #endif
 }
 
@@ -91,17 +84,14 @@ void store_fence()
 KOKKOS_FORCEINLINE_FUNCTION
 void load_fence()
 {
-#if defined( KOKKOS_ENABLE_ASM ) && defined( KOKKOS_USE_ISA_X86_64 )
-  asm volatile (
-	"lfence" ::: "memory"
-  	);
+#if defined( __CUDA_ARCH__ )
+  __threadfence();
 #else
-  memory_fence();
+  std::atomic_thread_fence( std::memory_order_seq_cst );
 #endif
 }
 
 } // namespace kokkos
 
 #endif
-
 

@@ -1,7 +1,7 @@
 #pragma once 
 #include "kokkos_shared.hpp"
 
-// Calculates key values from the field.
+// Calculates key values from the current field.
 template <class Device>
 struct FieldSummary
 {
