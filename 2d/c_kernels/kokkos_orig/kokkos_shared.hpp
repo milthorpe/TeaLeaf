@@ -52,13 +52,11 @@ class KokkosHelper
                 create_mirror_view(device_buffer);
             Kokkos::deep_copy(host_buffer, device_buffer);
 
-            double temp = 0.0;
             for(int ii = 0; ii < len; ++ii)
             {
-                temp += host_buffer[ii];
+            printf("%.12e\n", host_buffer[ii]);
             }
 
-            printf("%s : %.12e\n", name, temp);
         }
 };
 

@@ -9,21 +9,27 @@ struct CGInitU
     typedef Device device_type;
 
     CGInitU(
-            const int coefficient, KView p, KView r, KView u, 
-            KView w, KView density, KView energy) 
-        : coefficient(coefficient), p(p), w(w), r(r), 
+            const int x, const int y, const int coefficient, KView p, 
+            KView r, KView u, KView w, KView density, KView energy) 
+        : x(x), y(y), coefficient(coefficient), p(p), w(w), r(r), 
         u(u), density(density), energy(energy) { }
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const int index) const 
     {
+        const int kk = index % x; 
+        const int jj = index / x; 
         p(index) = 0.0;
         r(index) = 0.0;
         u(index) = energy(index)*density(index);
-        w(index) = (coefficient == CONDUCTIVITY) 
+        if(jj > 0 && jj < y-1 && kk > 0 & kk < x-1) {
+          w(index) = (coefficient == CONDUCTIVITY) 
             ? density(index) : 1.0/density(index);
+        }
     }
 
+    const int x;
+    const int y;
     const int coefficient;
     KView r;
     KView u;

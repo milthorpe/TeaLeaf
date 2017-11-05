@@ -1,11 +1,11 @@
 # Used specified parameters
-KERNELS   = omp4_clang
+KERNELS   = omp3
 CPROFILER = yes
 DEBUG     = no
-OPTIONS   = -DNO_MPI
-CC        = /localhd/mattmar/trunk/obj/bin/clang
-CPP       = /localhd/mattmar/trunk/obj/bin/clang++
-COMPILER  = CLANG
+OPTIONS   = #-DNO_MPI
+CC        = gcc
+CPP       = g++
+COMPILER  = GNU
 
 # By default use C compiler and flags, may be overridden by implementation
 TL_LINK     = $(CC)

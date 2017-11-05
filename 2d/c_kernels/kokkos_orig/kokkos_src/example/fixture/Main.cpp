@@ -290,13 +290,24 @@ int main()
     Kokkos::HostSpace::execution_space::finalize();
   }
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
   {
     std::cout << "test_fixture< Cuda >" << std::endl ;
     Kokkos::HostSpace::execution_space::initialize();
     Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice(0) );
     Kokkos::Example::test_fixture< Kokkos::Cuda >();
     Kokkos::Cuda::finalize();
+    Kokkos::HostSpace::execution_space::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_ENABLE_ROCM )
+  {
+    std::cout << "test_fixture< ROCm >" << std::endl ;
+    Kokkos::HostSpace::execution_space::initialize();
+    Kokkos::Experimental::ROCm::initialize( Kokkos::Experimental::ROCm::SelectDevice(0) );
+    Kokkos::Example::test_fixture< Kokkos::Experimental::ROCm >();
+    Kokkos::Experimental::ROCm::finalize();
     Kokkos::HostSpace::execution_space::finalize();
   }
 #endif

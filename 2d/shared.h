@@ -18,6 +18,11 @@ void print_and_log(struct Settings* settings, const char* format, ...);
 void plot_2d(int x, int y, double* buffer, const char* name);
 void die(int lineNum, const char* file, const char* format, ...);
 
+// Write out data for visualisation in visit
+void write_to_visit(
+    const int nx, const int ny, const int x_off, const int y_off, 
+    const double* data, const char* name, const int step, const double time);
+
 // Global constants
 #define MASTER 0
 

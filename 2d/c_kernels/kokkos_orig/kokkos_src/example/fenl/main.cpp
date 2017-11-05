@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //                        Kokkos v. 2.0
 //              Copyright (2014) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,14 +35,15 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
-// 
+//
 // ************************************************************************
 //@HEADER
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <strings.h>
+#include <cmath>
+
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include <utility>
 #include <string>
@@ -66,6 +67,7 @@ enum { CMD_USE_THREADS = 0
      , CMD_USE_NUMA
      , CMD_USE_CORE_PER_NUMA
      , CMD_USE_CUDA
+     , CMD_USE_ROCM
      , CMD_USE_OPENMP
      , CMD_USE_CUDA_DEV
      , CMD_USE_FIXTURE_X
@@ -113,6 +115,9 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_CUDA ] ) {
     s << " CUDA(" << cmd[ CMD_USE_CUDA_DEV ] << ")" ;
   }
+  if ( cmd[ CMD_USE_ROCM ] ) {
+    s << " ROCM" ;
+  }
   if ( cmd[ CMD_USE_ATOMIC ] ) {
     s << " ATOMIC" ;
   }
@@ -155,7 +160,7 @@ void run( MPI_Comm comm , const int cmd[] )
 {
   int comm_rank = 0 ;
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Comm_rank( comm , & comm_rank );
 #else
   comm = 0 ;
@@ -166,6 +171,7 @@ void run( MPI_Comm comm , const int cmd[] )
     if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
     else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
     else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+    else if ( cmd[ CMD_USE_ROCM ] ) { std::cout << "ROCM" ; }
 
     if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
     else { std::cout << " , LINEAR-ELEMENT" ; }
@@ -254,7 +260,7 @@ int main( int argc , char ** argv )
 {
   int comm_rank = 0 ;
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Init( & argc , & argv );
   MPI_Comm comm = MPI_COMM_WORLD ;
   MPI_Comm_rank( comm , & comm_rank );
@@ -286,6 +292,9 @@ int main( int argc , char ** argv )
       else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
         cmdline[ CMD_USE_CUDA ] = 1 ;
         cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "rocm" ) ) {
+        cmdline[ CMD_USE_ROCM ] = 1 ;
       }
       else if ( 0 == strcasecmp( argv[i] , "fixture" ) ) {
         sscanf( argv[++i] , "%dx%dx%d" ,
@@ -326,7 +335,7 @@ int main( int argc , char ** argv )
     if ( cmdline[ CMD_ECHO ] && 0 == comm_rank ) { print_cmdline( std::cout , cmdline ); }
   }
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Bcast( cmdline , CMD_COUNT , MPI_INT , 0 , comm );
 #endif
 
@@ -356,7 +365,7 @@ int main( int argc , char ** argv )
       cmdline[ CMD_USE_FIXTURE_Z ] = 2 ;
     }
 
-#if defined( KOKKOS_HAVE_PTHREAD )
+#if defined( KOKKOS_ENABLE_THREADS )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
 
@@ -376,7 +385,7 @@ int main( int argc , char ** argv )
 
 #endif
 
-#if defined( KOKKOS_HAVE_OPENMP )
+#if defined( KOKKOS_ENABLE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
 
@@ -396,7 +405,7 @@ int main( int argc , char ** argv )
 
 #endif
 
-#if defined( KOKKOS_HAVE_CUDA )
+#if defined( KOKKOS_ENABLE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
       // Use the last device:
 
@@ -411,9 +420,24 @@ int main( int argc , char ** argv )
 
 #endif
 
+#if defined( KOKKOS_ENABLE_ROCM )
+    if ( cmdline[ CMD_USE_ROCM ] ) {
+      // Use the last device:
+
+      Kokkos::HostSpace::execution_space::initialize();
+      Kokkos::Experimental::ROCm::initialize( Kokkos::Experimental::ROCm::SelectDevice( cmdline[ CMD_USE_ROCM ] ) );
+
+      run< Kokkos::Experimental::ROCm , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
+
+      Kokkos::Experimental::ROCm::finalize();
+      Kokkos::HostSpace::execution_space::finalize();
+    }
+
+#endif
+
   }
 
-#if defined( KOKKOS_HAVE_MPI )
+#if defined( KOKKOS_ENABLE_MPI )
   MPI_Finalize();
 #endif
 

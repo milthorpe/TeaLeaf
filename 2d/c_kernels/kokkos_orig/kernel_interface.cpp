@@ -53,6 +53,7 @@ void run_set_chunk_data(Chunk* chunk, Settings* settings)
 
     parallel_for(chunk->x*chunk->y, set_chunk_data);
 
+
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
@@ -136,14 +137,13 @@ void run_pack_or_unpack(
 {
     START_PROFILING(settings->kernel_profile);
 
-    int buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
-        ? (chunk->x-2*settings->halo_depth)*depth 
-        : (chunk->y-2*settings->halo_depth)*depth;
+    const int buffer_length = (face == CHUNK_LEFT || face == CHUNK_RIGHT)
+        ? chunk->y*depth : chunk->x*depth;
 
     if(!pack)
     {
         KokkosHelper::PackMirror<double>(
-                chunk->ext->host_comms_mirror, buffer, buffer_length); 
+                chunk->ext->host_comms_mirror, buffer, buffer_length);
         Kokkos::deep_copy(chunk->ext->comms_buffer, chunk->ext->host_comms_mirror); 
     }
 
@@ -165,262 +165,258 @@ void run_pack_or_unpack(
 
 void run_store_energy(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    StoreEnergy<DEVICE> store_energy(chunk->energy, chunk->energy0);
+  StoreEnergy<DEVICE> store_energy(chunk->energy, chunk->energy0);
 
-    parallel_for(chunk->x*chunk->y, store_energy);
+  parallel_for(chunk->x*chunk->y, store_energy);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_field_summary(
-        Chunk* chunk, Settings* settings, 
-        double* vol, double* mass, double* ie, double* temp)
+    Chunk* chunk, Settings* settings, 
+    double* vol, double* mass, double* ie, double* temp)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    FieldSummary<DEVICE> field_summary(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->density, 
-            chunk->energy0, chunk->volume);
+  FieldSummary<DEVICE> field_summary(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->density, 
+      chunk->energy0, chunk->volume);
 
-    FieldSummary<DEVICE>::value_type result;
+  FieldSummary<DEVICE>::value_type result;
 
-    parallel_reduce(chunk->x*chunk->y, field_summary, result);
+  parallel_reduce(chunk->x*chunk->y, field_summary, result);
 
-    *vol = result.vol;
-    *mass = result.mass;
-    *ie = result.ie;
-    *temp = result.temp;
+  *vol = result.vol;
+  *mass = result.mass;
+  *ie = result.ie;
+  *temp = result.temp;
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // CG solver kernels
 void run_cg_init(
-        Chunk* chunk, Settings* settings, 
-        double rx, double ry, double* rro)
+    Chunk* chunk, Settings* settings, 
+    double rx, double ry, double* rro)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CGInitU<DEVICE> cg_init_u(
-            settings->coefficient, chunk->p, chunk->r, chunk->u, 
-            chunk->w, chunk->density, chunk->energy);
+  CGInitU<DEVICE> cg_init_u(
+      chunk->x, chunk->y, settings->coefficient, chunk->p, chunk->r, chunk->u, 
+      chunk->w, chunk->density, chunk->energy);
 
-    parallel_for(chunk->x*chunk->y, cg_init_u);
+  parallel_for(chunk->x*chunk->y, cg_init_u);
 
-    CGInitK<DEVICE> cg_init_k(
-            chunk->x, chunk->y, settings->halo_depth, chunk->w, chunk->kx, 
-            chunk->ky, rx, ry);
+  CGInitK<DEVICE> cg_init_k(
+      chunk->x, chunk->y, settings->halo_depth, chunk->w, chunk->kx, 
+      chunk->ky, rx, ry);
 
-    int x_inner=chunk->x - (2*settings->halo_depth-1);
-    int y_inner =chunk->y - (2*settings->halo_depth-1);
-    parallel_for(x_inner*y_inner, cg_init_k);
+  parallel_for(chunk->x*chunk->y, cg_init_k);
 
-    CGInitOthers<DEVICE> cg_init_others(
-            chunk->x, chunk->y, settings->halo_depth, chunk->kx, chunk->ky, 
-            chunk->p, chunk->r, chunk->u, chunk->w);
+  CGInitOthers<DEVICE> cg_init_others(
+      chunk->x, chunk->y, settings->halo_depth, chunk->kx, chunk->ky, 
+      chunk->p, chunk->r, chunk->u, chunk->w);
 
-    x_inner= chunk->x - 2*settings->halo_depth;
-    y_inner = chunk->y - 2*settings->halo_depth;
-    parallel_reduce(x_inner*y_inner, cg_init_others, *rro);
+  parallel_reduce(chunk->x*chunk->y, cg_init_others, *rro);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_w(Chunk* chunk, Settings* settings, double* pw)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CGCalcW<DEVICE> cg_calc_w(
-            chunk->x, chunk->y, settings->halo_depth, chunk->w, 
-            chunk->p, chunk->kx, chunk->ky);
+  CGCalcW<DEVICE> cg_calc_w(
+      chunk->x, chunk->y, settings->halo_depth, chunk->w, 
+      chunk->p, chunk->kx, chunk->ky);
 
-    parallel_reduce(chunk->x*chunk->y, cg_calc_w, *pw);
+  parallel_reduce(chunk->x*chunk->y, cg_calc_w, *pw);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_ur(
-        Chunk* chunk, Settings* settings, double alpha, double* rrn)
+    Chunk* chunk, Settings* settings, double alpha, double* rrn)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CGCalcUR<DEVICE> cg_calc_ur(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->r, 
-            chunk->p, chunk->w, alpha);
+  CGCalcUR<DEVICE> cg_calc_ur(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->r, 
+      chunk->p, chunk->w, alpha);
 
-    parallel_reduce(chunk->x*chunk->y, cg_calc_ur, *rrn);
+  parallel_reduce(chunk->x*chunk->y, cg_calc_ur, *rrn);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cg_calc_p(Chunk* chunk, Settings* settings, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CGCalcP<DEVICE> cg_calc_p(
-            chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, 
-            chunk->r);
+  CGCalcP<DEVICE> cg_calc_p(
+      chunk->x, chunk->y, settings->halo_depth, beta, chunk->p, 
+      chunk->r);
 
-    parallel_for(chunk->x*chunk->y, cg_calc_p);
+  parallel_for(chunk->x*chunk->y, cg_calc_p);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Chebyshev solver kernels
 void run_cheby_init(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    ChebyInit<DEVICE> cheby_init(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
-            chunk->p, chunk->r, chunk->u, chunk->u0, chunk->w, 
-            chunk->kx, chunk->ky);
+  ChebyInit<DEVICE> cheby_init(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
+      chunk->p, chunk->r, chunk->u, chunk->u0, chunk->w, 
+      chunk->kx, chunk->ky);
 
-    parallel_for(chunk->x*chunk->y, cheby_init);
+  parallel_for(chunk->x*chunk->y, cheby_init);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_cheby_iterate(
-        Chunk* chunk, Settings* settings, double alpha, double beta)
+    Chunk* chunk, Settings* settings, double alpha, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    ChebyIterate<DEVICE> cheby_iterate(
-            chunk->x, chunk->y, settings->halo_depth, alpha, beta, chunk->p, 
-            chunk->r, chunk->u, chunk->u0, chunk->w, 
-            chunk->kx, chunk->ky);
+  ChebyIterate<DEVICE> cheby_iterate(
+      chunk->x, chunk->y, settings->halo_depth, alpha, beta, chunk->p, 
+      chunk->r, chunk->u, chunk->u0, chunk->w, 
+      chunk->kx, chunk->ky);
 
-    parallel_for(chunk->x*chunk->y, cheby_iterate);
+  parallel_for(chunk->x*chunk->y, cheby_iterate);
 
-    ChebyCalcU<DEVICE> cheby_calc_u(
-            chunk->x, chunk->y, settings->halo_depth, chunk->p, chunk->u);
+  ChebyCalcU<DEVICE> cheby_calc_u(
+      chunk->x, chunk->y, settings->halo_depth, chunk->p, chunk->u);
 
-    parallel_for(chunk->x*chunk->y, cheby_calc_u);
+  parallel_for(chunk->x*chunk->y, cheby_calc_u);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Jacobi solver kernels
 void run_jacobi_init(
-        Chunk* chunk, Settings* settings, double rx, double ry)
+    Chunk* chunk, Settings* settings, double rx, double ry)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    JacobiInit<DEVICE> jacobi_init(
-            chunk->x, chunk->y, settings->halo_depth, 
-            settings->coefficient, rx, ry, chunk->u, chunk->u0, 
-            chunk->density, chunk->energy, chunk->kx, chunk->ky);
+  JacobiInit<DEVICE> jacobi_init(
+      chunk->x, chunk->y, settings->halo_depth, 
+      settings->coefficient, rx, ry, chunk->u, chunk->u0, 
+      chunk->density, chunk->energy, chunk->kx, chunk->ky);
 
-    parallel_for(chunk->x*chunk->y, jacobi_init);
+  parallel_for(chunk->x*chunk->y, jacobi_init);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_jacobi_iterate(
-        Chunk* chunk, Settings* settings, double* error)
+    Chunk* chunk, Settings* settings, double* error)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    JacobiCopyU<DEVICE> jacobi_copy_u(chunk->r, chunk->u);
+  JacobiCopyU<DEVICE> jacobi_copy_u(chunk->r, chunk->u);
 
-    parallel_for(chunk->x*chunk->y, jacobi_copy_u);
+  parallel_for(chunk->x*chunk->y, jacobi_copy_u);
 
-    JacobiIterate<DEVICE> jacobi_iterate(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->u0, chunk->r, chunk->kx, chunk->ky);
+  JacobiIterate<DEVICE> jacobi_iterate(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->u0, chunk->r, chunk->kx, chunk->ky);
 
-    parallel_reduce(chunk->x*chunk->y, jacobi_iterate, *error);
+  parallel_reduce(chunk->x*chunk->y, jacobi_iterate, *error);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // PPCG solver kernels
 void run_ppcg_init(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    PPCGInit<DEVICE> ppcg_init(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
-            chunk->sd, chunk->r);
+  PPCGInit<DEVICE> ppcg_init(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, 
+      chunk->sd, chunk->r);
 
-    parallel_for(chunk->x*chunk->y, ppcg_init);
+  parallel_for(chunk->x*chunk->y, ppcg_init);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_ppcg_inner_iteration(
-        Chunk* chunk, Settings* settings, double alpha, double beta)
+    Chunk* chunk, Settings* settings, double alpha, double beta)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    PPCGCalcUR<DEVICE> ppcg_calc_ur(
-            chunk->x, chunk->y, settings->halo_depth, chunk->sd, chunk->r, 
-            chunk->u, chunk->kx, chunk->ky);
+  PPCGCalcUR<DEVICE> ppcg_calc_ur(
+      chunk->x, chunk->y, settings->halo_depth, chunk->sd, chunk->r, 
+      chunk->u, chunk->kx, chunk->ky);
 
-    parallel_for(chunk->x*chunk->y, ppcg_calc_ur);
+  parallel_for(chunk->x*chunk->y, ppcg_calc_ur);
 
-    PPCGCalcSd<DEVICE> ppcg_calc_sd(
-            chunk->x, chunk->y, settings->halo_depth, chunk->theta, alpha, beta, 
-            chunk->sd, chunk->r);
+  PPCGCalcSd<DEVICE> ppcg_calc_sd(
+      chunk->x, chunk->y, settings->halo_depth, chunk->theta, alpha, beta, 
+      chunk->sd, chunk->r);
 
-    parallel_for(chunk->x*chunk->y, ppcg_calc_sd);
+  parallel_for(chunk->x*chunk->y, ppcg_calc_sd);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 // Shared solver kernels
 void run_copy_u(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CopyU<DEVICE> copy_u(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->u0);
+  CopyU<DEVICE> copy_u(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, chunk->u0);
 
-    parallel_for(chunk->x*chunk->y, copy_u);
+  parallel_for(chunk->x*chunk->y, copy_u);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_calculate_residual(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    CalculateResidual<DEVICE> calculate_residual(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->u0, chunk->r, chunk->kx, chunk->ky);
+  CalculateResidual<DEVICE> calculate_residual(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->u0, chunk->r, chunk->kx, chunk->ky);
 
-    parallel_for(chunk->x*chunk->y, calculate_residual);
+  parallel_for(chunk->x*chunk->y, calculate_residual);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_calculate_2norm(
-        Chunk* chunk, Settings* settings, KView buffer, double* norm)
+    Chunk* chunk, Settings* settings, KView buffer, double* norm)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    Calculate2Norm<DEVICE> calculate_2norm(
-            chunk->x, chunk->y, settings->halo_depth, buffer);
+  Calculate2Norm<DEVICE> calculate_2norm(
+      chunk->x, chunk->y, settings->halo_depth, buffer);
 
-    parallel_reduce(chunk->x*chunk->y, calculate_2norm, *norm);
+  parallel_reduce(chunk->x*chunk->y, calculate_2norm, *norm);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 void run_finalise(Chunk* chunk, Settings* settings)
 {
-    START_PROFILING(settings->kernel_profile);
+  START_PROFILING(settings->kernel_profile);
 
-    Finalise<DEVICE> finalise(
-            chunk->x, chunk->y, settings->halo_depth, chunk->u, 
-            chunk->density, chunk->energy);
+  Finalise<DEVICE> finalise(
+      chunk->x, chunk->y, settings->halo_depth, chunk->u, 
+      chunk->density, chunk->energy);
 
-    parallel_for(chunk->x*chunk->y, finalise);
+  parallel_for(chunk->x*chunk->y, finalise);
 
-    STOP_PROFILING(settings->kernel_profile, __func__);
+  STOP_PROFILING(settings->kernel_profile, __func__);
 }
 
 

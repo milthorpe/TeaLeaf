@@ -76,7 +76,6 @@ void solve(Chunk* chunks, Settings* settings, int tt, double* wallclock_prev)
       (settings->grid_x_cells *
        settings->grid_y_cells));
   print_and_log(settings, "Error: \t\t\t%.6e\n", error);
-
 }
 
 // Calculate minimum timestep

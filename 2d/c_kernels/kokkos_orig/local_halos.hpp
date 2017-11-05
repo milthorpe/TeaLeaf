@@ -23,9 +23,8 @@ struct LocalHalos
 					int flip = index % depth;
 					int lines = index/depth;
 					int offset = lines*(x - depth);
-
-                    int to_index = offset + halo_depth - depth + index;
-                    int from_index = to_index + 2*(depth - flip) - 1;
+          int to_index = offset + halo_depth - depth + index;
+          int from_index = to_index + 2*(depth - flip) - 1;
 					buffer(to_index) = buffer(from_index);
 					break;
 				}
@@ -34,7 +33,6 @@ struct LocalHalos
 					int flip = index % depth;
 					int lines = index/depth;
 					int offset = x-halo_depth + lines*(x-depth);
-
 					int to_index = offset+index;
 					int from_index = to_index-(1+flip*2);
 					buffer(to_index) = buffer(from_index);
@@ -44,7 +42,6 @@ struct LocalHalos
 				{
 					int lines = index/x;
 					int offset = x*(y-halo_depth);
-
 					int to_index = offset+index;
 					int from_index = to_index-(1+lines*2)*x;
 					buffer(to_index) = buffer(from_index);
@@ -54,7 +51,6 @@ struct LocalHalos
 				{
 					int lines = index/x;
 					int offset = x*halo_depth;
-
 					int from_index = offset+index;
 					int to_index = from_index-(1+lines*2)*x;
 					buffer(to_index) = buffer(from_index);
