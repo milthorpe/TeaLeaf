@@ -3,9 +3,6 @@
 
 using namespace Kokkos;
 
-// TODO: Check if the tests for bound overrun is superfluous with Kokkos 
-// lambdas, I imagine it is...
-
 // Packs the top halo buffer(s)
 void pack_top(
         const int x, const int y, const int halo_depth, 
@@ -13,10 +10,8 @@ void pack_top(
 {
     parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
-          if(index < x*depth) {
             const int offset = x*(y-halo_depth-depth);
             buffer(index) = field(offset+index);
-          }
     });
 }
 
@@ -27,10 +22,8 @@ void pack_bottom(
 {
     parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
-          if(index < x*depth) {
             const int offset = x*halo_depth;
             buffer(index) = field(offset+index);
-          }
     });
 }
 
@@ -41,11 +34,9 @@ void pack_left(
 {
     parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     {
-          if(index < y*depth) {
             const int lines = index/depth;
             const int offset = halo_depth + lines*(x-depth);
             buffer(index) = field(offset+index);
-          }
     });
 }
 
@@ -56,11 +47,9 @@ void pack_right(
 {
     parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     {        
-          if(index < y*depth) {
             const int lines = index/depth;
             const int offset = x-halo_depth-depth + lines*(x-depth);
             buffer(index) = field(offset+index);
-          }
     });
 }
 
@@ -71,10 +60,8 @@ void unpack_top(
 {
     parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
-          if(index < x*depth) {
             const int offset = x*(y-halo_depth);
             field(offset+index)=buffer(index);
-          }
     });
 }
 
@@ -85,10 +72,8 @@ void unpack_bottom(
 {
     parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
-          if(index < x*depth) {
             const int offset = x*(halo_depth-depth);
             field(offset+index)=buffer(index);
-          }
     });
 }
 
@@ -99,11 +84,9 @@ void unpack_left(
 {
     parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     {      
-          if(index < y*depth) {
             const int lines = index/depth;
             const int offset = halo_depth - depth + lines*(x-depth);
             field(offset+index)=buffer(index);
-          }
     });
 }
 
@@ -114,11 +97,9 @@ void unpack_right(
 {
     parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     { 
-          if(index < y*depth) {
             const int lines = index/depth;
             const int offset = x-halo_depth + lines*(x-depth);
             field(offset+index)=buffer(index);
-          }
     });
 }
 

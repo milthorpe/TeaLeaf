@@ -101,9 +101,9 @@ void cg_calc_ur(
        if(kk >= halo_depth && kk < x - halo_depth &&
          jj >= halo_depth && jj < y - halo_depth)
        {
-       u(index) += alpha*p(index);
-       r(index) -= alpha*w(index);
-       rrn_temp += r(index)*r(index);
+         u(index) += alpha*p(index);
+         r(index) -= alpha*w(index);
+         rrn_temp += r(index)*r(index);
        }
     }, *rrn);
 }

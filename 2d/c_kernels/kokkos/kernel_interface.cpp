@@ -135,14 +135,14 @@ void run_pack_or_unpack(
           chunk->ext->comms_buffer, field, depth);\
     }
 
-    PACK_HALO(CHUNK_LEFT, pack, pack_left);
-    PACK_HALO(CHUNK_RIGHT, pack, pack_right);
-    PACK_HALO(CHUNK_BOTTOM, pack, pack_bottom);
-    PACK_HALO(CHUNK_TOP, pack, pack_top);
-    PACK_HALO(CHUNK_LEFT, !pack, unpack_left);
-    PACK_HALO(CHUNK_RIGHT, !pack, unpack_right);
-    PACK_HALO(CHUNK_BOTTOM, !pack, unpack_bottom);
-    PACK_HALO(CHUNK_TOP, !pack, unpack_top);
+    PACK_HALO(CHUNK_LEFT, 1, pack_left);
+    PACK_HALO(CHUNK_RIGHT, 1, pack_right);
+    PACK_HALO(CHUNK_BOTTOM, 1, pack_bottom);
+    PACK_HALO(CHUNK_TOP, 1, pack_top);
+    PACK_HALO(CHUNK_LEFT, 0, unpack_left);
+    PACK_HALO(CHUNK_RIGHT, 0, unpack_right);
+    PACK_HALO(CHUNK_BOTTOM, 0, unpack_bottom);
+    PACK_HALO(CHUNK_TOP, 0, unpack_top);
 
   if(pack)
   {
