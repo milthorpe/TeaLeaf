@@ -22,7 +22,7 @@
 #define DEF_GRID_Y_CELLS 10
 #define DEF_GRID_Z_CELLS 10
 #define DEF_DT_INIT 0.1
-#define DEF_MAX_ITERS 1000
+#define DEF_MAX_ITERS 10000
 #define DEF_EPS 1.0E-15
 #define DEF_END_TIME 10.0
 #define DEF_END_STEP INT32_MAX

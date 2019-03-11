@@ -21,7 +21,7 @@ void cg_driver(
 
     halo_update_driver(chunks, settings, 1);
 
-    if(fabs(*error) < settings->eps) break;
+    if(sqrt(fabs(*error)) < settings->eps) break;
   }
 
   print_and_log(settings, "CG: \t\t\t%d iterations\n", tt);
