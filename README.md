@@ -1,5 +1,5 @@
 # TeaLeaf
-DOCS IN PROGRESS!!! 
+DOCS IN PROGRESS!!!
 
 A fully C-based implementation of the TeaLeaf heat conduction mini-app.
 
@@ -10,27 +10,27 @@ This application exists to avoid support issues created by the use of Fortran in
 ## The Make system
 
  There is a single master Makefile in the root of the application and each set of kernels has it's own Makefile. The make system is not well tested for portability, so expect to adjust the kernel-specific Makefiles for particular architecture.
- 
+
  Unless you are looking to significantly change the structure of the application, it is likely that you will only need to adjust the user-defined parameters at the top of the Makefile.
- 
+
  `KERNELS` should match one of the kernel suite (see Structure and Code elements below) sub-directories, e.g. omp3 or raja.
- 
+
  `CPROFILER` accepts either `yes` or `no` and enables the lightweight C profiling tool for function level profiling.
- 
+
  `DEBUG` accepts `yes` or `no` and enable debugging flags
- 
- `OPTIONS` is for user defined options, useful for testing without major development. We support the -DNO_MPI flag to disable all MPI functionality, allowing the application to be built with standard compilers.
- 
+
+ `OPTIONS` is for user defined options, useful for testing without major development. We support the `-DNO_MPI` flag to disable all MPI functionality, allowing the application to be built with standard compilers. The `-DENABLE_PROFILING` turns on the code's coarse grained internal profiler end. Timing information is reported at the end of the simulation in the tea.out file.
+
  `CC` is the C compiler
- 
+
  `CPP` is the C++ compiler
- 
+
  `COMPILER` accepts a single upper case descriptor for the compiler being used, please see the `make.flags` file in order to see the existing compiler flags available.
- 
+
  Should additional adjustments to the make system be required, it is preferred that they are made in the Makefiles included in each of the kernel suites, to separate concerns as much as possible. It's probably best to look at the existing Makefiles for examples of how to create a new kernel suite Makefile. There are some aspects of the main make system that can be affected from within one of the kernel suite Makefiles.
- 
+
  The `TL_LINK`, `TL_COMPILER`, `TL_FLAGS`, and `TL_LDFLAGS` variables can be overloaded from within a kernel suite Makefile, in order to overload the compiler used for linking, and compilation, the compilation, and linking flags respectively.
- 
+
 ## Compiling
 
 Ideally, the description of the Makefile above makes it very clear what is required to build the TeaLeaf application, some examples are given below:
@@ -52,7 +52,7 @@ A complete list of options is given below, where `<R>` shows the option takes a 
 
 `initial_timestep <R>`
 
-Set the initial time step for TeaLeaf. This time step stays constant through the entire simulation. The default value is 
+Set the initial time step for TeaLeaf. This time step stays constant through the entire simulation. The default value is
 
 `end_time <R>`
 
@@ -72,7 +72,7 @@ In the event that both the above options are set, the simulation will terminate 
 
 `ymax <R>`
 
-The above four options set the size of the computational domain. The default domain size is a 10cm square. 
+The above four options set the size of the computational domain. The default domain size is a 10cm square.
 
 `x_cells <I>`
 
@@ -150,8 +150,7 @@ This keyword selects the Chebyshev method to solve the linear system.
 
 `profiler_on`
 
-
-This option turns the code's coarse grained internal profiler end. Timing information is reported at the end of the simulation in the tea.out file. The default is no profiling.
+This option does not currently work. Instead compile with the `-DENABLE_PROFILING` flag being passed to the OPTIONS parameter specified to the make command.
 
 `verbose_on`
 
