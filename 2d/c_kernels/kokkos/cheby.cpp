@@ -1,7 +1,7 @@
 #include "kokkos_shared.hpp"
 #include "../../shared.h"
 
-using namespace Kokkos;
+
 
 // Initialises the Chebyshev solver
 void cheby_init(
@@ -9,7 +9,7 @@ void cheby_init(
         KView p, KView r, KView u, KView u0, KView w, 
         KView kx, KView ky) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const int kk = index % x; 
         const int jj = index / x; 
@@ -17,7 +17,7 @@ void cheby_init(
         if(kk >= halo_depth && kk < x - halo_depth &&
            jj >= halo_depth && jj < y - halo_depth)
         {
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             w[index] = smvp;
             r[index] = u0[index]-w[index];
             p[index] = r[index]/theta;
@@ -30,7 +30,7 @@ void cheby_calc_u(
         const int x, const int y, const int halo_depth, KView p, 
         KView u) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const int kk = index % x; 
         const int jj = index / x; 
@@ -50,7 +50,7 @@ void cheby_iterate(
         KView r, KView u, KView u0, KView w, KView kx, 
         KView ky) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const int kk = index % x; 
         const int jj = index / x; 
@@ -58,7 +58,7 @@ void cheby_iterate(
         if(kk >= halo_depth && kk < x - halo_depth &&
            jj >= halo_depth && jj < y - halo_depth)
         {
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             w[index] = smvp;
             r[index] = u0[index]-w[index];
             p[index] = alpha*p[index] + beta*r[index];

@@ -38,6 +38,10 @@ void kernel_initialise(
             "Performing this solve with the serial %s solver\n",
             settings->solver_name);
 
+    if(settings->device_selector){
+        print_and_log(settings, "Device selection is unsupported for this model, ignoring selector `%s`\n", settings->device_selector);
+    }
+
     allocate_buffer(density0, x, y);
     allocate_buffer(density, x, y);
     allocate_buffer(energy0, x, y);

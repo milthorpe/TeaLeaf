@@ -22,7 +22,7 @@ __global__ void cheby_init(
 	const int off0 = halo_depth*(x + 1);
 	const int index = off0 + col + row*x;
 
-	const double smvp = SMVP(u);
+	const double smvp = tealeaf_SMVP(u);
 	w[index] = smvp;
 	r[index] = u0[index] - w[index];
 	p[index] = r[index] / theta;
@@ -70,7 +70,7 @@ __global__ void cheby_calc_p(
 	const int off0 = halo_depth*(x + 1);
 	const int index = off0 + col + row*x;
 
-	const double smvp = SMVP(u);
+	const double smvp = tealeaf_SMVP(u);
 	w[index] = smvp;
 	r[index] = u0[index]-w[index];
 	p[index] = alpha*p[index] + beta*r[index];

@@ -44,8 +44,8 @@ void eigenvalue_driver_initialise(
     // Get minimum and maximum eigenvalues
     for(int ii = 0; ii < num_cg_iters; ++ii)
     {
-      chunks[cc].eigmin = MIN(chunks[cc].eigmin, diag[ii]);
-      chunks[cc].eigmax = MAX(chunks[cc].eigmax, diag[ii]);
+      chunks[cc].eigmin = tealeaf_MIN(chunks[cc].eigmin, diag[ii]);
+      chunks[cc].eigmax = tealeaf_MAX(chunks[cc].eigmax, diag[ii]);
     }
 
     if(chunks[cc].eigmin < 0.0 || chunks[cc].eigmax < 0.0)
@@ -91,7 +91,7 @@ void tqli(double* d, double* e, int n)
       }
       g=(d[l+1]-d[l])/(2.0*e[l]);
       r=sqrt((g*g)+1.0);
-      g=d[m]-d[l]+e[l]/(g+sign(r,g));
+      g=d[m]-d[l]+e[l]/(g+tealeaf_sign(r,g));
       s=c=1.0;
       p=0.0;
       for (i=m-1;i>=l;i--) {

@@ -73,7 +73,7 @@ __global__ void cg_init_others(
         const int off0 = halo_depth*(x + 1);
         const int index = off0 + col + row*x;
 
-        const double smvp = SMVP(u);
+        const double smvp = tealeaf_SMVP(u);
 
         w[index] = smvp;
         r[index] = u[index]-w[index];
@@ -106,7 +106,7 @@ __global__ void cg_calc_w(
         const int off0 = halo_depth*(x + 1);
         const int index = off0 + col + row*x;
 
-        const double smvp = SMVP(p);
+        const double smvp = tealeaf_SMVP(p);
         w[index] = smvp;
         pw_shared[threadIdx.x] = w[index]*p[index];
     }

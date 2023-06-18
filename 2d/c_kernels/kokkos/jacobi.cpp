@@ -1,7 +1,7 @@
 #include "kokkos_shared.hpp"
 #include "../../shared.h"
 
-using namespace Kokkos;
+
 
 // Initialises the Jacobi solver
 void jacobi_init(
@@ -9,7 +9,7 @@ void jacobi_init(
             const int coefficient, const double rx, const double ry, KView u, 
             KView u0, KView density, KView energy, KView kx, KView ky) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index) 
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -44,7 +44,7 @@ void jacobi_iterate(
         const int x, const int y, const int halo_depth, KView u, 
         KView u0, KView r, KView kx, KView ky, double* error) 
 {
-    parallel_reduce(x*y, KOKKOS_LAMBDA (const int index, double& temp_error)
+    Kokkos::parallel_reduce(x*y, KOKKOS_LAMBDA (const int index, double& temp_error)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -57,7 +57,7 @@ void jacobi_iterate(
                 + (ky(index+x)*r(index+x) + ky(index)*r(index-x)))
                 / (1.0 + (kx(index)+kx(index+1)) + (ky(index)+ky(index+x)));
 
-            temp_error += fabs(u(index)-r(index));
+            temp_error += Kokkos::fabs(u(index)-r(index));
         }
     }, *error);
 }
@@ -66,7 +66,7 @@ void jacobi_iterate(
 void jacobi_copy_u(
         const int x, const int y, KView r, KView u)
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         r(index) = u(index);	
     });

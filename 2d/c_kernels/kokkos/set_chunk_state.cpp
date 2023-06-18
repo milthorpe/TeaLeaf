@@ -2,14 +2,14 @@
 #include "../../shared.h"
 #include "../../settings.h"
 
-using namespace Kokkos;
+
 
 // Sets the initial state for the chunk
 void set_chunk_initial_state(
             const int x, const int y, double default_energy, 
             double default_density, KView energy0, KView density)
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         energy0(index) = default_energy;
         density(index) = default_density;
@@ -22,7 +22,7 @@ void set_chunk_state(
             KView energy0, KView density, KView u, KView cell_x, KView cell_y, 
             KView vertex_x, KView vertex_y) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -39,7 +39,7 @@ void set_chunk_state(
         }
         else if(state.geometry == CIRCULAR) // Circular state
         {
-            double radius = sqrt(
+            double radius = Kokkos::sqrt(
                     (cell_x(kk)-state.x_min)*(cell_x(kk)-state.x_min)+
                     (cell_y(jj)-state.y_min)*(cell_y(jj)-state.y_min));
 

@@ -56,7 +56,7 @@ __global__ void calculate_residual(
     const int off0 = halo_depth*(x + 1);
     const int index = off0 + col + row*x;
 
-    const double smvp = SMVP(u);
+    const double smvp = tealeaf_SMVP(u);
     r[index] = u0[index] - smvp;
 }
 

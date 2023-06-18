@@ -22,9 +22,9 @@ void initialise_application(Chunk** chunks, Settings* settings)
 
   // Prime the initial halo data
   reset_fields_to_exchange(settings);
-  settings->fields_to_exchange[FIELD_DENSITY] = true;
-  settings->fields_to_exchange[FIELD_ENERGY0] = true;
-  settings->fields_to_exchange[FIELD_ENERGY1] = true;
+  settings->fields_to_exchange[FIELD_DENSITY] = true; // start.f90:111
+  settings->fields_to_exchange[FIELD_ENERGY0] = true; // start.f90:112
+  settings->fields_to_exchange[FIELD_ENERGY1] = true; // start.f90:113
   halo_update_driver(*chunks, settings, 2);
 
   store_energy_driver(*chunks, settings);

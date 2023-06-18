@@ -2,7 +2,7 @@
 #include "../../settings.h"
 #include "../../shared.h"
 
-using namespace Kokkos;
+
 
 // Initialises the vertices
 void set_chunk_data_vertices(
@@ -10,7 +10,7 @@ void set_chunk_data_vertices(
             KView vertex_y, const double x_min, const double y_min, 
             const double dx, const double dy) 
 {
-    parallel_for(MAX(x,y)+1, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(tealeaf_MAX(x,y)+1, KOKKOS_LAMBDA (const int index)
     {
         if(index < x+1)
         {
@@ -31,7 +31,7 @@ void set_chunk_data(
         KView x_area, KView y_area, const double x_min, const double y_min, 
         const double dx, const double dy) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         if(index < x)
         {

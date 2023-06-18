@@ -57,6 +57,7 @@ void set_default_settings(Settings* settings)
     (bool*)malloc(sizeof(bool)*NUM_FIELDS);
   settings->solver_name = 
     (char*)malloc(sizeof(char)*MAX_CHAR_LEN);
+  settings->device_selector = NULL;
 }
 
 // Resets all of the fields to be exchanged

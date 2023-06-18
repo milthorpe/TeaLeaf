@@ -18,3 +18,16 @@ tealeaf.*
 *.optrpt
 src.*
 tags
+
+# CMake
+cmake-build-*/
+Build/
+build/
+
+
+# IntelliJ
+out/
+
+
+# KDE directory preferences
+.directory

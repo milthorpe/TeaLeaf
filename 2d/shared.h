@@ -9,6 +9,12 @@
 #include <string.h>
 #include "profiler.h"
 
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+
 struct Settings;
 
 // Shared function declarations
@@ -22,6 +28,10 @@ void die(int lineNum, const char* file, const char* format, ...);
 void write_to_visit(
     const int nx, const int ny, const int x_off, const int y_off, 
     const double* data, const char* name, const int step, const double time);
+
+#ifdef __cplusplus
+}
+#endif
 
 // Global constants
 #define MASTER 0
@@ -46,13 +56,13 @@ void write_to_visit(
 #define CG_ITERS_FOR_EIGENVALUES 20
 #define ERROR_SWITCH_MAX 1.0
 
-#define MIN(a, b) ((a < b) ? a : b)
-#define MAX(a, b) ((a > b) ? a : b)
-#define strmatch(a, b) (strcmp(a, b) == 0)
-#define sign(a,b) ((b)<0 ? -fabs(a) : fabs(a))
+#define tealeaf_MIN(a, b) ((a < b) ? a : b)
+#define tealeaf_MAX(a, b) ((a > b) ? a : b)
+#define tealeaf_strmatch(a, b) (strcmp(a, b) == 0)
+#define tealeaf_sign(a,b) ((b)<0 ? -fabs(a) : fabs(a))
 
 // Sparse Matrix Vector Product
-#define SMVP(a) \
+#define tealeaf_SMVP(a) \
     (1.0 + (kx[index+1]+kx[index])\
      + (ky[index+x]+ky[index]))*a[index]\
      - (kx[index+1]*a[index+1]+kx[index]*a[index-1])\

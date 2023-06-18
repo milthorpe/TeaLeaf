@@ -1,22 +1,8 @@
 #pragma once 
 
 #include <Kokkos_Core.hpp>
-#include <Kokkos_Parallel.hpp>
-#include <Kokkos_View.hpp>
 
-#ifdef CUDA
-    #define DEVICE Kokkos::Cuda
-#endif
-
-#ifdef OPENMP
-    #define DEVICE Kokkos::OpenMP
-#endif
-
-#ifndef DEVICE
-    #define DEVICE Kokkos::OpenMP
-#endif
-
-typedef Kokkos::View<double*, DEVICE> KView;
+typedef Kokkos::View<double*> KView;
 
 class KokkosHelper
 {

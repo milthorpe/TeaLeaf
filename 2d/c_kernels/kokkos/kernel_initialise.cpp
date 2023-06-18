@@ -8,7 +8,7 @@ void allocate_buffer(double** a, int x, int y)
 {
     *a = (double*)malloc(sizeof(double)*x*y);
 
-    if(*a == NULL) 
+    if(*a == nullptr)
     {
         die(__LINE__, __FILE__, "Error allocating buffer %s\n");
     }
@@ -26,15 +26,15 @@ void allocate_buffer(double** a, int x, int y)
 
 // Allocates all of the field buffers
 void kernel_initialise(
-        Settings* settings, int x, int y, KView* density0, 
-        KView* density, KView* energy0, KView* energy, KView* u, 
-        KView* u0, KView* p, KView* r, KView* mi, 
-        KView* w, KView* kx, KView* ky, KView* sd, 
-        KView* volume, KView* x_area, KView* y_area, KView* cell_x, 
-        KView* cell_y, KView* cell_dx, KView* cell_dy, KView* vertex_dx, 
-        KView* vertex_dy, KView* vertex_x, KView* vertex_y, KView* comms_buffer,
-        Kokkos::View<double*>::HostMirror* host_comms_mirror, 
-        double** cg_alphas, double** cg_betas, double** cheby_alphas, 
+        Settings* settings, int x, int y, KView** density0,
+        KView** density, KView** energy0, KView** energy, KView** u,
+        KView** u0, KView** p, KView** r, KView** mi,
+        KView** w, KView** kx, KView** ky, KView** sd,
+        KView** volume, KView** x_area, KView** y_area, KView** cell_x,
+        KView** cell_y, KView** cell_dx, KView** cell_dy, KView** vertex_dx,
+        KView** vertex_dy, KView** vertex_x, KView** vertex_y, KView** comms_buffer,
+        Kokkos::View<double*>::HostMirror** host_comms_mirror,
+        double** cg_alphas, double** cg_betas, double** cheby_alphas,
         double** cheby_betas)
 {
     print_and_log(settings,
@@ -43,34 +43,34 @@ void kernel_initialise(
 
     Kokkos::initialize();
 
-    new(density0) KView("density0", x*y);
-    new(density) KView("density", x*y);
-    new(energy0) KView("energy0", x*y);
-    new(energy) KView("energy", x*y);
-    new(u) KView("u", x*y);
-    new(u0) KView("u0", x*y);
-    new(p) KView("p", x*y);
-    new(r) KView("r", x*y);
-    new(mi) KView("mi", x*y);
-    new(w) KView("w", x*y);
-    new(kx) KView("kx", x*y);
-    new(ky) KView("ky", x*y);
-    new(sd) KView("sd", x*y);
-    new(volume) KView("volume", x*y);
-    new(x_area) KView("x_area", (x+1)*y);
-    new(y_area) KView("y_area", x*(y+1));
-    new(cell_x) KView("cell_x", x);
-    new(cell_y) KView("cell_y", y);
-    new(cell_dx) KView("cell_dx", x);
-    new(cell_dy) KView("cell_dy", y);
-    new(vertex_dx) KView("vertex_dx", (x+1));
-    new(vertex_dy) KView("vertex_dy", (y+1));
-    new(vertex_x) KView("vertex_x", (x+1));
-    new(vertex_y) KView("vertex_y", (y+1));
+    *density0 = new KView("density0", x*y);
+    *density = new KView("density", x*y);
+    *energy0 = new KView("energy0", x*y);
+    *energy = new KView("energy", x*y);
+    *u = new KView("u", x*y);
+    *u0 = new KView("u0", x*y);
+    *p = new KView("p", x*y);
+    *r = new KView("r", x*y);
+    *mi = new KView("mi", x*y);
+    *w = new KView("w", x*y);
+    *kx = new KView("kx", x*y);
+    *ky = new KView("ky", x*y);
+    *sd = new KView("sd", x*y);
+    *volume = new KView("volume", x*y);
+    *x_area = new KView("x_area", (x+1)*y);
+    *y_area = new KView("y_area", x*(y+1));
+    *cell_x = new KView("cell_x", x);
+    *cell_y = new KView("cell_y", y);
+    *cell_dx = new KView("cell_dx", x);
+    *cell_dy = new KView("cell_dy", y);
+    *vertex_dx = new KView("vertex_dx", (x+1));
+    *vertex_dy = new KView("vertex_dy", (y+1));
+    *vertex_x = new KView("vertex_x", (x+1));
+    *vertex_y = new KView("vertex_y", (y+1));
 
-    new(comms_buffer) KView("comms_buffer", MAX(x, y)*settings->halo_depth);
-    new(host_comms_mirror) KView::HostMirror(); 
-    *host_comms_mirror = Kokkos::create_mirror_view(*comms_buffer);
+    *comms_buffer = new KView("comms_buffer", tealeaf_MAX(x, y)*settings->halo_depth);
+    *host_comms_mirror = new KView::HostMirror();
+    **host_comms_mirror = Kokkos::create_mirror_view(**comms_buffer);
 
     allocate_buffer(cg_alphas, settings->max_iters, 1);
     allocate_buffer(cg_betas, settings->max_iters, 1);

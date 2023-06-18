@@ -1,14 +1,14 @@
 #include "kokkos_shared.hpp"
 #include "../../shared.h"
 
-using namespace Kokkos;
+
 
 // Updates the local left halo region(s)
 void update_left(
         const int x, const int y, const int halo_depth, KView buffer, 
         const int face, const int depth) 
 {
-    parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     {
         const size_t flip = index % depth;
         const size_t lines = index/depth;
@@ -24,7 +24,7 @@ void update_right(
         const int x, const int y, const int halo_depth, KView buffer, 
         const int face, const int depth) 
 {
-    parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(y*depth, KOKKOS_LAMBDA (const int index)
     {
         const size_t flip = index % depth;
         const size_t lines = index/depth;
@@ -40,7 +40,7 @@ void update_top(
         const int x, const int y, const int halo_depth, KView buffer, 
         const int face, const int depth) 
 {
-    parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
          const size_t lines = index/x;
          const size_t offset = x*(y-halo_depth);
@@ -56,7 +56,7 @@ void update_bottom(
         const int x, const int y, const int halo_depth, KView buffer, 
         const int face, const int depth) 
 {
-    parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*depth, KOKKOS_LAMBDA (const int index)
     {
          const size_t lines = index/x;
          const size_t offset = x*halo_depth;

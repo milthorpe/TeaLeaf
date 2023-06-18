@@ -1,10 +1,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <time.h>
 #include "profiler.h"
 
-#define strmatch(a, b) (strcmp(a, b) == 0)
+#define tealeaf_strmatch(a, b) (strcmp(a, b) == 0)
 
 // Internally start the profiling timer
 void profiler_start_timer(struct Profile* profile)
@@ -29,7 +28,7 @@ void profiler_end_timer(struct Profile* profile, const char* entry_name)
   int ii;
   for(ii = 0; ii < profile->profiler_entry_count; ++ii)
   {
-    if(strmatch(profile->profiler_entries[ii].name, entry_name))
+    if(tealeaf_strmatch(profile->profiler_entries[ii].name, entry_name))
     {
       break;
     }
@@ -102,7 +101,7 @@ int profiler_get_profile_entry(struct Profile* profile, const char* entry_name)
 {
   for(int ii = 0; ii < profile->profiler_entry_count; ++ii)
   {
-    if(strmatch(profile->profiler_entries[ii].name, entry_name))
+    if(tealeaf_strmatch(profile->profiler_entries[ii].name, entry_name))
     {
       return ii;
     }

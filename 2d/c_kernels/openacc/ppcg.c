@@ -45,7 +45,7 @@ void ppcg_inner_iteration(
         for(int kk = halo_depth; kk < x-halo_depth; ++kk)
         {
             const int index = kk + jj*x;
-            const double smvp = SMVP(sd);
+            const double smvp = tealeaf_SMVP(sd);
             r[index] -= smvp;
             u[index] += sd[index];
         }

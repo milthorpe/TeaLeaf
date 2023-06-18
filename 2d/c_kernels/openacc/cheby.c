@@ -45,7 +45,7 @@ void cheby_init(
         for(int kk = halo_depth; kk < x-halo_depth; ++kk)
         {
             const int index = kk + jj*x;
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             w[index] = smvp;
             r[index] = u0[index]-w[index];
             p[index] = r[index] / theta;
@@ -79,7 +79,7 @@ void cheby_iterate(
         for(int kk = halo_depth; kk < x-halo_depth; ++kk)
         {	
             const int index = kk + jj*x;
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             w[index] = smvp;
             r[index] = u0[index]-w[index];
             p[index] = alpha*p[index] + beta*r[index];

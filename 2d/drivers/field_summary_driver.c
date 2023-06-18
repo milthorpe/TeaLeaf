@@ -41,7 +41,7 @@ void field_summary_driver(
     print_and_log(settings, "Actual   %.15e\n", temp);
 
     double qa_diff = fabs(100.0*(temp/checking_value)-100.0);
-    if(qa_diff < 0.001)
+    if(qa_diff < 0.001 && !isnan(temp))
     {
       print_and_log(settings, "This run \033[32mPASSED\033[0m");
     }

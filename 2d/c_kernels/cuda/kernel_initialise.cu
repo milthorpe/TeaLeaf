@@ -1,11 +1,16 @@
+#include "../../shared.h"
 #include "c_kernels.h"
 #include "cuknl_shared.h"
-#include "../../shared.h"
-#include <stdlib.h>
+#include <algorithm>
+#include <iostream>
+#include <cstdlib>
+#include <string>
+#include <vector>
 
 // Allocates, and zeroes and individual buffer
 void allocate_device_buffer(double** a, int x, int y)
 {
+
     cudaMalloc((void**)a, x*y*sizeof(double));
     check_errors(__LINE__, __FILE__);
 
@@ -47,29 +52,58 @@ void kernel_initialise(
         double** cheby_betas, double** d_comm_buffer, double** d_reduce_buffer, 
         double** d_reduce_buffer2, double** d_reduce_buffer3, double** d_reduce_buffer4)
 {
+
     print_and_log(settings,
-            "Performing this solve with the CUDA %s solver\n",
-            settings->solver_name);    
+                  "Performing this solve with the CUDA %s solver\n",
+                  settings->solver_name);
 
-    // TODO: DOES NOT BELONG HERE!!!
-    //
-    // Naive assumption that devices are paired even and odd
-    int num_devices;
-    cudaGetDeviceCount(&num_devices);
-
-    int device_id = settings->rank%num_devices;
-
-    int result = cudaSetDevice(device_id);
-    if(result != cudaSuccess)
-    {
-        die(__LINE__,__FILE__,"Could not allocate CUDA device %d.\n", device_id);
+    int count;
+    cudaGetDeviceCount(&count);
+    std::vector<std::pair<int, std::string>> devices(count);
+    for (int i = 0; i < count; ++i) {
+        cudaDeviceProp props{};
+        cudaGetDeviceProperties(&props, i);
+        devices[i] = {i, std::string(props.name)};
     }
 
-    struct cudaDeviceProp properties;
-    cudaGetDeviceProperties(&properties, device_id);
+    print_and_log(settings, "Available devices = %d\n", devices.size());
+    if(count == 0) {
+        print_and_log(settings, "WARNING: cudaGetDeviceCount returned 0 devices.\n");
+    }
+    for(auto &d : devices) {
+        print_and_log(settings, "\t[%d] %s\n", d.first, d.second.c_str());
+    }
 
-    print_and_log(settings, "Rank %d using %s device id %d\n", 
-            settings->rank, properties.name, device_id);
+    auto selector = !settings->device_selector ? "0" : std::string(settings->device_selector);
+    int selected = 0;
+    try {
+        selected = std::stoi(selector);
+    } catch (const std::exception &e) {
+        print_and_log(settings, "Unable to parse/select device index `%s`: %s\n", selector.c_str(), e.what());
+        print_and_log(settings, "Attempting to match device with substring  `%s`\n", selector.c_str());
+
+        auto matching = std::find_if(devices.begin(), devices.end(),
+                                     [selector](const auto &device) { return device.second.find(selector) != std::string::npos; });
+        if (matching != devices.end()) {
+            selected = matching->first;
+            print_and_log(settings, "Using first device matching substring `%s`\n", selector.c_str());
+        } else if (devices.size() == 1)
+            print_and_log(settings, "No matching device but there's only one device, will be using that anyway\n");
+        else {
+            std::cerr << "No matching devices" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+    }
+
+    int result = cudaSetDevice(selected);
+    if(result != cudaSuccess)
+    {
+        die(__LINE__,__FILE__,"Could not allocate CUDA device %d.\n", selected);
+    }
+
+    cudaDeviceProp properties{};
+    cudaGetDeviceProperties(&properties, selected);
+    print_and_log(settings, "Rank %d using %s device id %d\n", settings->rank, properties.name, selected);
 
     const int x_inner = x - 2*settings->halo_depth;
     const int y_inner = y - 2*settings->halo_depth;

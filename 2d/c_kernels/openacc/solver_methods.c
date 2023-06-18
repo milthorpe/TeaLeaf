@@ -43,7 +43,7 @@ void calculate_residual(
         for(int kk = halo_depth; kk < x-halo_depth; ++kk)
         {
             const int index = kk + jj*x;
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             r[index] = u0[index] - smvp;
         }
     }

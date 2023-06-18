@@ -1,7 +1,7 @@
 #include "kokkos_shared.hpp"
 #include "../../shared.h"
 
-using namespace Kokkos;
+
 
 // Initialises p,r,u,w
 void cg_init_u(
@@ -9,7 +9,7 @@ void cg_init_u(
             KView p, KView r, KView u, KView w, KView density, 
             KView energy) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -29,7 +29,7 @@ void cg_init_k(
         const int x, const int y, const int halo_depth, KView w, 
         KView kx, KView ky, const double rx, const double ry)
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int index)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -50,7 +50,7 @@ void cg_init_others(
         const int x, const int y, const int halo_depth, KView kx, 
         KView ky, KView p, KView r, KView u, KView w, double* rro) 
 {
-    parallel_reduce(x*y, KOKKOS_LAMBDA (const int index, double& rro_temp)
+    Kokkos::parallel_reduce(x*y, KOKKOS_LAMBDA (const int index, double& rro_temp)
     {
         const size_t kk = index % x; 
         const size_t jj = index / x; 
@@ -58,7 +58,7 @@ void cg_init_others(
         if(kk >= halo_depth && kk < x - halo_depth &&
            jj >= halo_depth && jj < y - halo_depth)
         {
-            const double smvp = SMVP(u);
+            const double smvp = tealeaf_SMVP(u);
             w(index) = smvp;
             r(index) = u(index)-w(index);
             p(index) = r(index);
@@ -73,7 +73,7 @@ void cg_calc_w(
         KView p, KView kx, KView ky, double* pw) 
 {
 
-    parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& pw_temp)
+    Kokkos::parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& pw_temp)
     {
       const size_t kk = index % x;
       const size_t jj = index / x;
@@ -81,7 +81,7 @@ void cg_calc_w(
       if(kk >= halo_depth && kk < x - halo_depth &&
          jj >= halo_depth && jj < y - halo_depth)
       {
-          const double smvp = SMVP(p);
+          const double smvp = tealeaf_SMVP(p);
           w(index) = smvp;
           pw_temp += w(index)*p(index);
       }
@@ -93,7 +93,7 @@ void cg_calc_ur(
         const int x, const int y, const int halo_depth, KView u, 
         KView r, KView p, KView w, const double alpha, double* rrn) 
 {
-    parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& rrn_temp)
+    Kokkos::parallel_reduce(x*y, KOKKOS_LAMBDA (const int& index, double& rrn_temp)
     {
        const int kk = index % x; 
        const int jj = index / x; 
@@ -113,7 +113,7 @@ void cg_calc_p(
         const int x, const int y, const int halo_depth, const double beta, 
         KView p, KView r) 
 {
-    parallel_for(x*y, KOKKOS_LAMBDA (const int& index)
+    Kokkos::parallel_for(x*y, KOKKOS_LAMBDA (const int& index)
     {
        const int kk = index % x; 
        const int jj = index / x; 

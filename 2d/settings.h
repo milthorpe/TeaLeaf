@@ -106,6 +106,7 @@ typedef struct Settings
     char* solver_name;
 
     Kernel_Language kernel_language;
+    char* device_selector;
     
     // Field dimensions
     int grid_x_cells;

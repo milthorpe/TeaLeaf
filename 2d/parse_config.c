@@ -206,7 +206,7 @@ int read_states(FILE* tea_in, Settings* settings, State** states)
 
     if(starts_get_int("state", line, word, &state_num))
     {
-      num_states = MAX(num_states, state_num);
+      num_states = tealeaf_MAX(num_states, state_num);
     }
   }
 
@@ -261,18 +261,18 @@ int read_states(FILE* tea_in, Settings* settings, State** states)
 
         read_value(line, "geometry", word);
 
-        if(strmatch(word, "rectangle"))
+        if(tealeaf_strmatch(word, "rectangle"))
         {
           state->geometry = RECTANGULAR;
         }
-        else if(strmatch(word, "circular"))
+        else if(tealeaf_strmatch(word, "circular"))
         {
           state->geometry = CIRCULAR;
 
           read_value(line, "radius", word); 
           state->radius = atof(word);
         }
-        else if(strmatch(word, "point"))
+        else if(tealeaf_strmatch(word, "point"))
         {
           state->geometry = POINT;
         }
