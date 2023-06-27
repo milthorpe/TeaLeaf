@@ -7,9 +7,11 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # some nicer defaults for standard C
 set(CMAKE_C_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_C_STANDARD 11)
+
 
 include(FetchContent)
 
@@ -47,13 +49,13 @@ include(FetchContent)
 #set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
 #set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
 ######
-set(MODEL sycl-acc)
-set(SYCL_COMPILER ONEAPI-ICPX)
-set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
-set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
-set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
-set(ENABLE_MPI ON)
-set(ENABLE_PROFILING OFF)
+#set(MODEL sycl-acc)
+#set(SYCL_COMPILER ONEAPI-ICPX)
+#set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
+#set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+#set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+#set(ENABLE_MPI ON)
+#set(ENABLE_PROFILING OFF)
 
 
 ######
@@ -82,7 +84,6 @@ endif ()
 # the final executable name
 set(EXE_NAME tealeaf)
 
-set(CMAKE_C_STANDARD 11)
 
 ## select default build type if not given
 if (NOT CMAKE_BUILD_TYPE)
@@ -97,9 +98,9 @@ endif ()
 
 # setup some defaults flags for everything
 set(DEFAULT_DEBUG_C_FLAGS -O2 ${DEBUG_FLAGS} -g)
-set(DEFAULT_RELEASE_C_FLAGS -Ofast -march=native -g) # -ffast-math
+set(DEFAULT_RELEASE_C_FLAGS -O3   -march=native -g)
 set(DEFAULT_DEBUG_CXX_FLAGS -O2)
-set(DEFAULT_RELEASE_CXX_FLAGS -Ofast -march=native -g) # -ffast-math
+set(DEFAULT_RELEASE_CXX_FLAGS -O3   -march=native -g)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
