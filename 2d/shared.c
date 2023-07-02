@@ -12,6 +12,7 @@ void initialise_log(
   }
 
   printf("Opening %s as log file.\n", settings->tea_out_filename);
+  fflush(stdout);
   settings->tea_out_fp = fopen(settings->tea_out_filename, "w");
 
   if(!settings->tea_out_fp)
@@ -35,10 +36,11 @@ void print_and_log(
   va_start(arglist, format);
   vprintf(format, arglist);
   va_end(arglist);
+  fflush(stdout);
 
   if(!settings->tea_out_fp)
   {
-    die(__LINE__, __FILE__, 
+    die(__LINE__, __FILE__,
         "Attempted to write to log before it was initialised\n");
   }
 
@@ -47,6 +49,7 @@ void print_and_log(
   va_start(arglist2, format);
   vfprintf(settings->tea_out_fp, format, arglist2);
   va_end(arglist2);
+  fflush(settings->tea_out_fp);
 }
 
 // Logs message in log file
@@ -61,7 +64,7 @@ void print_to_log(
 
   if(!settings->tea_out_fp)
   {
-    die(__LINE__, __FILE__, 
+    die(__LINE__, __FILE__,
         "Attempted to write to log before it was initialised\n");
   }
 
@@ -69,11 +72,12 @@ void print_to_log(
   va_start(arglist, format);
   vfprintf(settings->tea_out_fp, format, arglist);
   va_end(arglist);
+  fflush(settings->tea_out_fp);
 }
 
 // Plots a two-dimensional dat file.
 void plot_2d(int x, int y, double* buffer, const char* name)
-{    
+{
   // Open the plot file
   FILE* fp = fopen("plot2d.dat", "wb");
   if(!fp) { printf("Could not open plot file.\n"); }
@@ -106,13 +110,14 @@ void die(int lineNum, const char* file, const char* format, ...)
   va_start(arglist, format);
   vprintf(format, arglist);
   va_end(arglist);
+  fflush(stdout);
 
   abort_comms();
 }
 
 // Write out data for visualisation in visit
 void write_to_visit(
-    const int nx, const int ny, const int x_off, const int y_off, 
+    const int nx, const int ny, const int x_off, const int y_off,
     const double* data, const char* name, const int step, const double time)
 {
   char bovname[256];

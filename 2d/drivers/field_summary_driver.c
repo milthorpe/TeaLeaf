@@ -61,7 +61,8 @@ void get_checking_value(Settings* settings, double* checking_value)
   if(!test_problem_file)
   {
     print_and_log(settings,
-        "\nWARNING: Could not open the test problem file.\n");
+        "\nWARNING: Could not open the test problem file: %s, expected value will be invalid.\n", settings->test_problem_filename);
+    return;
   }
 
   size_t len = 0;
@@ -87,6 +88,6 @@ void get_checking_value(Settings* settings, double* checking_value)
 
   *checking_value = 1.0;
   print_and_log(settings, 
-      "\nWARNING: Problem was not found in the test problems file.\n");
+      "\nWARNING: Problem was not found in the test problems file, expected value will be invalid.\n");
   fclose(test_problem_file);
 }
