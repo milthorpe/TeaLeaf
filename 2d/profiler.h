@@ -40,8 +40,8 @@ struct Profile {
   struct ProfileEntry profiler_entries[PROFILER_MAX_ENTRIES];
 };
 
-void profiler_initialise();
-void profiler_finalise();
+struct Profile* profiler_initialise();
+void profiler_finalise(struct Profile** profile);
 
 void profiler_start_timer(struct Profile *profile);
 void profiler_end_timer(struct Profile *profile, const char *entry_name);

@@ -54,6 +54,10 @@ int main(int argc, char** argv)
     free(&(chunks[cc]));
   }
 
+  profiler_finalise(&settings->kernel_profile);
+  profiler_finalise(&settings->application_profile);
+  profiler_finalise(&settings->wallclock_profile);
+
   // Finalise the application
   free(settings);
   finalise_comms();

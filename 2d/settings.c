@@ -47,12 +47,9 @@ void set_default_settings(Settings* settings)
   settings->num_ranks = DEF_NUM_RANKS;
   settings->halo_depth = DEF_HALO_DEPTH;
   settings->is_offload = DEF_IS_OFFLOAD;
-  settings->kernel_profile = 
-    (struct Profile*)malloc(sizeof(struct Profile));
-  settings->application_profile = 
-    (struct Profile*)malloc(sizeof(struct Profile));
-  settings->wallclock_profile = 
-    (struct Profile*)malloc(sizeof(struct Profile));
+  settings->kernel_profile = profiler_initialise();
+  settings->application_profile = profiler_initialise();
+  settings->wallclock_profile = profiler_initialise();
   settings->fields_to_exchange =
     (bool*)malloc(sizeof(bool)*NUM_FIELDS);
   settings->solver_name = 

@@ -5,6 +5,17 @@
 
 #define tealeaf_strmatch(a, b) (strcmp(a, b) == 0)
 
+struct Profile*  profiler_initialise() {
+  struct Profile* profile = malloc(sizeof(struct Profile));
+  memset(profile, 0, sizeof (struct Profile));
+  return profile;
+}
+
+void profiler_finalise(struct Profile** profile) {
+  free(*profile);
+  *profile = NULL;
+}
+
 // Internally start the profiling timer
 void profiler_start_timer(struct Profile* profile)
 {
