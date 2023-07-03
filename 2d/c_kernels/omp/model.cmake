@@ -114,7 +114,7 @@ register_flag_optional(OFFLOAD_APPEND_LINK_FLAG
 
 macro(setup)
     find_package(OpenMP REQUIRED)
-    register_link_library(OpenMP::OpenMP_CXX)
+    register_link_library(OpenMP::OpenMP_C) # TeaLeaf OpenMP kernels are in C, not CXX
 
     string(TOUPPER ${CMAKE_CXX_COMPILER_ID} COMPILER)
     if(NOT ARCH)
