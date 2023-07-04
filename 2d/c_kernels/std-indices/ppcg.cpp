@@ -13,12 +13,13 @@ void ppcg_init(const int x,          //
                double theta,         //
                double *r,            //
                double *sd) {
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      sd[index] = r[index] / theta;
-    }
+  Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    sd[index] = r[index] / theta;
   });
 }
 
@@ -33,21 +34,23 @@ void ppcg_inner_iteration(const int x,          //
                           double *kx,           //
                           double *ky,           //
                           double *sd) {
-  ranged<int> it1(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it1.begin(), it1.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      const double smvp = tealeaf_SMVP(sd);
-      r[index] -= smvp;
-      u[index] += sd[index];
-    }
+
+  Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    const double smvp = tealeaf_SMVP(sd);
+    r[index] -= smvp;
+    u[index] += sd[index];
   });
 
-  ranged<int> it2(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it2.begin(), it2.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      sd[index] = alpha * sd[index] + beta * r[index];
-    }
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    sd[index] = alpha * sd[index] + beta * r[index];
   });
 }

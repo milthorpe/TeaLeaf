@@ -12,12 +12,13 @@ void cheby_calc_u(const int x,          //
                   const int halo_depth, //
                   double *u,            //
                   double *p) {
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      u[index] += p[index];
-    }
+  Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    u[index] += p[index];
   });
 }
 
@@ -33,15 +34,16 @@ void cheby_init(const int x,          //
                 double *w,            //
                 double *kx,           //
                 double *ky) {
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      const double smvp = tealeaf_SMVP(u);
-      w[index] = smvp;
-      r[index] = u0[index] - w[index];
-      p[index] = r[index] / theta;
-    }
+  Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    const double smvp = tealeaf_SMVP(u);
+    w[index] = smvp;
+    r[index] = u0[index] - w[index];
+    p[index] = r[index] / theta;
   });
 
   cheby_calc_u(x, y, halo_depth, u, p);
@@ -60,15 +62,16 @@ void cheby_iterate(const int x,          //
                    double *w,            //
                    double *kx,           //
                    double *ky) {
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      const int index = kk + jj * x;
-      const double smvp = tealeaf_SMVP(u);
-      w[index] = smvp;
-      r[index] = u0[index] - w[index];
-      p[index] = alpha * p[index] + beta * r[index];
-    }
+  Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const int jj = (i / range.sizeX()) + range.fromX;
+    const int kk = (i % range.sizeX()) + range.fromY;
+    const int index = kk + jj * x;
+    const double smvp = tealeaf_SMVP(u);
+    w[index] = smvp;
+    r[index] = u0[index] - w[index];
+    p[index] = alpha * p[index] + beta * r[index];
   });
 
   cheby_calc_u(x, y, halo_depth, u, p);
