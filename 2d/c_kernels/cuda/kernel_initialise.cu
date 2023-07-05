@@ -90,8 +90,7 @@ void kernel_initialise(
         } else if (devices.size() == 1)
             print_and_log(settings, "No matching device but there's only one device, will be using that anyway\n");
         else {
-            std::cerr << "No matching devices" << std::endl;
-            std::exit(EXIT_FAILURE);
+            die(__LINE__, __FILE__, "No matching devices for `%s`\n", selector.c_str());
         }
     }
 

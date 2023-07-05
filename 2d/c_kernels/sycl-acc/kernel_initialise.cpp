@@ -37,8 +37,8 @@ void kernel_initialise(Settings *settings, int x, int y, SyclBuffer **density0Bu
   auto devices = sycl::device::get_devices();
 
   print_and_log(settings, "Available devices = %d\n", devices.size());
-  if(devices.empty()) {
-    die(__LINE__, __FILE__,  "WARNING: sycl::device::get_devices() returned 0 devices.");
+  if (devices.empty()) {
+    die(__LINE__, __FILE__, "sycl::device::get_devices() returned 0 devices.");
   }
   for (int i = 0; i < devices.size(); ++i) {
     print_and_log(settings, "\t[%d] %s\n", i, devices[i].get_info<sycl::info::device::name>().c_str());
@@ -48,25 +48,24 @@ void kernel_initialise(Settings *settings, int x, int y, SyclBuffer **density0Bu
   try {
     selected = devices.at(std::stoul(selector));
   } catch (const std::exception &e) {
-    std::cout << "Unable to parse/select device index `" << selector << "`:" << e.what() << std::endl;
-    std::cout << "Attempting to match device with substring  `" << selector << "`" << std::endl;
+    print_and_log(settings, "Unable to parse/select device index `%s`:%s\n", selector.c_str(), e.what());
+    print_and_log(settings, "Attempting to match device with substring `%s`\n", selector.c_str());
 
     auto matching = std::find_if(devices.begin(), devices.end(), [selector](const sycl::device &device) {
       return device.get_info<sycl::info::device::name>().find(selector) != std::string::npos;
     });
     if (matching != devices.end()) {
       selected = *matching;
-      std::cout << "Using first device matching substring `" << selector << "`" << std::endl;
-    } else if (devices.size() == 1)
-      std::cerr << "No matching device but there's only one device, will be using that anyway" << std::endl;
-    else {
-      std::cerr << "No matching devices" << std::endl;
-      std::exit(EXIT_FAILURE);
+      print_and_log(settings, "Using first device matching substring `%s`\n", selector.c_str());
+    } else if (devices.size() == 1) {
+      print_and_log(settings, "No matching device but there's only one device, will be using that anyway\n");
+    } else {
+      die(__LINE__, __FILE__, "No matching devices for `%s`\n", selector.c_str());
     }
   }
 
   (*device_queue) = new queue(selected);
-  std::cout << "Running on " << (**device_queue).get_device().get_info<cl::sycl::info::device::name>() << "\n";
+  print_and_log(settings, "Running on = %s\n", (**device_queue).get_device().get_info<cl::sycl::info::device::name>().c_str());
 
   (*density0Buff) = new SyclBuffer{range<1>{(size_t)x * y}};
   (*densityBuff) = new SyclBuffer{range<1>{(size_t)x * y}};
