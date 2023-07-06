@@ -31,52 +31,82 @@ void cg_init(const int x,           //
   }
 
   {
-    ranged<int> it(0, y);
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-      for (int kk = 0; kk < x; ++kk) {
-        const int index = kk + jj * x;
-        p[index] = 0.0;
-        r[index] = 0.0;
-        u[index] = energy[index] * density[index];
-      }
+    Range2d range(0, 0, x, y);
+    ranged<int> it(0, range.sizeXY());
+    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+      const int index = range.restore(i, x);
+      p[index] = 0.0;
+      r[index] = 0.0;
+      u[index] = energy[index] * density[index];
     });
+    //    ranged<int> it(0, y);
+    //    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
+    //      for (int kk = 0; kk < x; ++kk) {
+    //        const int index = kk + jj * x;
+    //        p[index] = 0.0;
+    //        r[index] = 0.0;
+    //        u[index] = energy[index] * density[index];
+    //      }
+    //    });
   }
 
   {
-    ranged<int> it(1, y - 1);
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-      for (int kk = 1; kk < x - 1; ++kk) {
-        const int index = kk + jj * x;
-        w[index] = (coefficient == CONDUCTIVITY) ? density[index] : 1.0 / density[index];
-      }
+    Range2d range(1, 1, x - 1, y - 1);
+    ranged<int> it(0, range.sizeXY());
+    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+      const int index = range.restore(i, x);
+      w[index] = (coefficient == CONDUCTIVITY) ? density[index] : 1.0 / density[index];
     });
+    //    ranged<int> it(1, y - 1);
+    //    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
+    //      for (int kk = 1; kk < x - 1; ++kk) {
+    //        const int index = kk + jj * x;
+    //        w[index] = (coefficient == CONDUCTIVITY) ? density[index] : 1.0 / density[index];
+    //      }
+    //    });
   }
 
   {
-    ranged<int> it(halo_depth, y - 1);
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-      for (int kk = halo_depth; kk < x - 1; ++kk) {
-        const int index = kk + jj * x;
-        kx[index] = rx * (w[index - 1] + w[index]) / (2.0 * w[index - 1] * w[index]);
-        ky[index] = ry * (w[index - x] + w[index]) / (2.0 * w[index - x] * w[index]);
-      }
+    Range2d range(halo_depth, halo_depth, x - 1, y - 1);
+    ranged<int> it(0, range.sizeXY());
+    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+      const int index = range.restore(i, x);
+      kx[index] = rx * (w[index - 1] + w[index]) / (2.0 * w[index - 1] * w[index]);
+      ky[index] = ry * (w[index - x] + w[index]) / (2.0 * w[index - x] * w[index]);
     });
+    //    ranged<int> it(halo_depth, y - 1);
+    //    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
+    //      for (int kk = halo_depth; kk < x - 1; ++kk) {
+    //        const int index = kk + jj * x;
+    //        kx[index] = rx * (w[index - 1] + w[index]) / (2.0 * w[index - 1] * w[index]);
+    //        ky[index] = ry * (w[index - x] + w[index]) / (2.0 * w[index - x] * w[index]);
+    //      }
+    //    });
   }
 
   {
-    ranged<int> it(halo_depth, y - 1);
-    *rro += std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int jj) {
-      double rro_temp = 0.0;
-      for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-        const int index = kk + jj * x;
-        const double smvp = tealeaf_SMVP(u);
-        w[index] = smvp;
-        r[index] = u[index] - w[index];
-        p[index] = r[index];
-        rro_temp += r[index] * p[index];
-      }
-      return rro_temp;
+    Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+    ranged<int> it(0, range.sizeXY());
+    *rro += std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int i) {
+      const int index = range.restore(i, x);
+      const double smvp = tealeaf_SMVP(u);
+      w[index] = smvp;
+      r[index] = u[index] - w[index];
+      p[index] = r[index];
+      return r[index] * p[index];
     });
+    //    Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
+    //    ranged<int> it(0, range.sizeXY());
+    //    *rro += std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int i) {
+    //      const int jj = (i / range.sizeX()) + range.fromX;
+    //      const int kk = (i % range.sizeX()) + range.fromY;
+    //      const int index = kk + jj * x;
+    //      const double smvp = tealeaf_SMVP(u);
+    //      w[index] = smvp;
+    //      r[index] = u[index] - w[index];
+    //      p[index] = r[index];
+    //      return r[index] * p[index];
+    //    });
   }
 }
 
@@ -92,9 +122,7 @@ void cg_calc_w(const int x,          //
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   *pw += std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     const double smvp = tealeaf_SMVP(p);
     w[index] = smvp;
     return w[index] * p[index];
@@ -125,9 +153,7 @@ void cg_calc_ur(const int x,          //
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   *rrn += std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     u[index] += alpha * p[index];
     r[index] -= alpha * w[index];
     return r[index] * r[index];
@@ -155,12 +181,9 @@ void cg_calc_p(const int x,          //
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     p[index] = beta * p[index] + r[index];
   });
-
   //  ranged<int> it(halo_depth, y - halo_depth);
   //  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
   //    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {

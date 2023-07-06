@@ -27,18 +27,14 @@ void jacobi_init(const int x,           //
   Range2d range(1, 1, x - 1, y - 1);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     double temp = energy[index] * density[index];
     u0[index] = temp;
     u[index] = temp;
   });
 
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     double densityCentre = (coefficient == CONDUCTIVITY) ? density[index] : 1.0 / density[index];
     double densityLeft = (coefficient == CONDUCTIVITY) ? density[index - 1] : 1.0 / density[index - 1];
     double densityDown = (coefficient == CONDUCTIVITY) ? density[index - x] : 1.0 / density[index - x];
@@ -63,9 +59,7 @@ void jacobi_iterate(const int x,          //
     Range2d range(0, 0, x, y);
     ranged<int> it(0, range.sizeXY());
     std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-      const int jj = (i / range.sizeX()) + range.fromX;
-      const int kk = (i % range.sizeX()) + range.fromY;
-      const int index = kk + jj * x;
+      const int index = range.restore(i, x);
       r[index] = u[index];
     });
   }
@@ -74,9 +68,7 @@ void jacobi_iterate(const int x,          //
     Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
     ranged<int> it(0, range.sizeXY());
     *error = std::transform_reduce(EXEC_POLICY, it.begin(), it.end(), 0.0, std::plus<>(), [=](int i) {
-      const int jj = (i / range.sizeX()) + range.fromX;
-      const int kk = (i % range.sizeX()) + range.fromY;
-      const int index = kk + jj * x;
+      const int index = range.restore(i, x);
       u[index] = (u0[index] + (kx[index + 1] * r[index + 1] + kx[index] * r[index - 1]) +
                   (ky[index + x] * r[index + x] + ky[index] * r[index - x])) /
                  (1.0 + (kx[index] + kx[index + 1]) + (ky[index] + ky[index + x]));

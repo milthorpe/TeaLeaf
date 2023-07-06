@@ -16,9 +16,7 @@ void ppcg_init(const int x,          //
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     sd[index] = r[index] / theta;
   });
 }
@@ -39,18 +37,14 @@ void ppcg_inner_iteration(const int x,          //
   ranged<int> it(0, range.sizeXY());
 
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     const double smvp = tealeaf_SMVP(sd);
     r[index] -= smvp;
     u[index] += sd[index];
   });
 
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-    const int jj = (i / range.sizeX()) + range.fromX;
-    const int kk = (i % range.sizeX()) + range.fromY;
-    const int index = kk + jj * x;
+    const int index = range.restore(i, x);
     sd[index] = alpha * sd[index] + beta * r[index];
   });
 }
