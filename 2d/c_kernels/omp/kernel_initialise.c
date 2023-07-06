@@ -49,7 +49,7 @@ void kernel_initialise(
     int count = omp_get_num_devices();
     print_and_log(settings, "Available devices = %d\n", count);
     if(count == 0) {
-        print_and_log(settings, "WARNING: omp_get_num_devices returned 0 devices, code will fallback to host execution.");
+        print_and_log(settings, "WARNING: omp_get_num_devices returned 0 devices, code will fallback to host execution.\n");
     }
     for (int i = 0; i < count; ++i) {
         print_and_log(settings, "\t#%d\n", i);

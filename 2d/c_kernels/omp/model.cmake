@@ -188,6 +188,7 @@ macro(setup)
     message(STATUS "OMP Link flags : ${OMP_LINK_FLAGS}")
     # propagate flags to linker so that it links with the offload stuff as well
     register_append_cxx_flags(ANY ${OMP_FLAGS})
+    register_append_c_flags(ANY ${OMP_FLAGS})
     if (OFFLOAD_APPEND_LINK_FLAG)
         register_append_link_flags(${OMP_FLAGS})
     endif ()
