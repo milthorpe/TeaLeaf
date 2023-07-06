@@ -179,7 +179,7 @@ void run_field_summary(
 
   Kokkos::parallel_reduce(
       chunk->x * chunk->y,
-      KOKKOS_LAMBDA(const int index, auto &vol, auto &mass, auto &ie, auto &temp) {
+      KOKKOS_LAMBDA(const int index, double &vol, double &mass, double &ie, double &temp) {
         const int kk = index % x;
         const int jj = index / x;
 
