@@ -49,7 +49,7 @@ void field_summary_driver(
     {
       print_and_log(settings, "This run \033[31mFAILED\033[0m");
     }
-    print_and_log(settings, " (Difference is within %.8lf%)\n", qa_diff); 
+    print_and_log(settings, " (Difference is within %.8lf%%)\n", qa_diff);
   }
 }
 
