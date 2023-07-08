@@ -176,7 +176,7 @@ __global__ void pack_top(
     if(gid >= x_inner*depth) return;
 
     const int lines = gid / x_inner;
-    const int offset = x - halo_depth + lines*(x - depth);
+    const int offset = x*(y - halo_depth - depth) + lines*2*halo_depth;
     buffer[gid] = field[offset+gid];
 }
 
