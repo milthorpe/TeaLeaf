@@ -4,6 +4,12 @@
  *      This is the main interface file for C based implementations.
  */
 
+// Initialises the vertices
+void set_chunk_data_vertices(
+    const int x, const int y, const int halo_depth, double* vertex_x,
+    double* vertex_y, const double x_min, const double y_min,
+    const double dx, const double dy)  ;
+
 // Initialisation kernels
 void set_chunk_data(
         Settings* settings, int x, int y, int left,
@@ -42,13 +48,12 @@ void local_halos(
         const int x, const int y, const int depth,
         const int halo_depth, const int* chunk_neighbours,
         const bool* fields_to_exchange, double* density, double* energy0,
-        double* energy, double* u, double* p, double* sd,
-        bool is_offload);
+        double* energy, double* u, double* p, double* sd);
 
 void pack_or_unpack(
         const int x, const int y, const int depth,
         const int halo_depth, const int face, bool pack, 
-        double *field, double* buffer, bool is_offload);
+        double *field, double* buffer);
 
 void store_energy(
         int x, int y, double* energy0, double* energy);

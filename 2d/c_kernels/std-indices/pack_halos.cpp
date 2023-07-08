@@ -2,7 +2,6 @@
 #include "dpl_shim.h"
 #include "ranged.h"
 #include <algorithm>
-#include <stdlib.h>
 
 // Packs left data into buffer.
 void pack_left(const int x,          //
@@ -10,16 +9,12 @@ void pack_left(const int x,          //
                const int depth,      //
                const int halo_depth, //
                double *field,        //
-               double *buffer,       //
-               bool is_offload) {
-  const int y_inner = y - 2 * halo_depth;
-
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < halo_depth + depth; ++kk) {
-      int buf_index = (kk - halo_depth) + (jj - halo_depth) * depth;
-      buffer[buf_index] = field[jj * x + kk];
-    }
+               double *buffer) {
+  ranged<int> it(0, y * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int lines = index / depth;
+    const int offset = halo_depth + lines * (x - depth);
+    buffer[index] = field[offset + index];
   });
 }
 
@@ -29,16 +24,12 @@ void pack_right(const int x,          //
                 const int depth,      //
                 const int halo_depth, //
                 double *field,        //
-                double *buffer,       //
-                bool is_offload) {
-  const int y_inner = y - 2 * halo_depth;
-
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = x - halo_depth - depth; kk < x - halo_depth; ++kk) {
-      int buf_index = (kk - (x - halo_depth - depth)) + (jj - halo_depth) * depth;
-      buffer[buf_index] = field[jj * x + kk];
-    }
+                double *buffer) {
+  ranged<int> it(0, y * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int lines = index / depth;
+    const int offset = x - halo_depth - depth + lines * (x - depth);
+    buffer[index] = field[offset + index];
   });
 }
 
@@ -48,16 +39,11 @@ void pack_top(const int x,          //
               const int depth,      //
               const int halo_depth, //
               double *field,        //
-              double *buffer,       //
-              bool is_offload) {
-  const int x_inner = x - 2 * halo_depth;
-
-  ranged<int> it(y - halo_depth - depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      int buf_index = (kk - halo_depth) + (jj - (y - halo_depth - depth)) * x_inner;
-      buffer[buf_index] = field[jj * x + kk];
-    }
+              double *buffer) {
+  ranged<int> it(0, x * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int offset = x * (y - halo_depth - depth);
+    buffer[index] = field[offset + index];
   });
 }
 
@@ -67,16 +53,11 @@ void pack_bottom(const int x,          //
                  const int depth,      //
                  const int halo_depth, //
                  double *field,        //
-                 double *buffer,       //
-                 bool is_offload) {
-  const int x_inner = x - 2 * halo_depth;
-
-  ranged<int> it(halo_depth, halo_depth + depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      int buf_index = (kk - halo_depth) + (jj - halo_depth) * x_inner;
-      buffer[buf_index] = field[jj * x + kk];
-    }
+                 double *buffer) {
+  ranged<int> it(0, x * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int offset = x * halo_depth;
+    buffer[index] = field[offset + index];
   });
 }
 
@@ -86,16 +67,12 @@ void unpack_left(const int x,          //
                  const int depth,      //
                  const int halo_depth, //
                  double *field,        //
-                 double *buffer,       //
-                 bool is_offload) {
-  const int y_inner = y - 2 * halo_depth;
-
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth - depth; kk < halo_depth; ++kk) {
-      int buf_index = (kk - (halo_depth - depth)) + (jj - halo_depth) * depth;
-      field[jj * x + kk] = buffer[buf_index];
-    }
+                 double *buffer) {
+  ranged<int> it(0, y * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int lines = index / depth;
+    const int offset = halo_depth - depth + lines * (x - depth);
+    field[offset + index] = buffer[index];
   });
 }
 
@@ -105,16 +82,12 @@ void unpack_right(const int x,          //
                   const int depth,      //
                   const int halo_depth, //
                   double *field,        //
-                  double *buffer,       //
-                  bool is_offload) {
-  const int y_inner = y - 2 * halo_depth;
-
-  ranged<int> it(halo_depth, y - halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = x - halo_depth; kk < x - halo_depth + depth; ++kk) {
-      int buf_index = (kk - (x - halo_depth)) + (jj - halo_depth) * depth;
-      field[jj * x + kk] = buffer[buf_index];
-    }
+                  double *buffer) {
+  ranged<int> it(0, y * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int lines = index / depth;
+    const int offset = x - halo_depth + lines * (x - depth);
+    field[offset + index] = buffer[index];
   });
 }
 
@@ -124,16 +97,11 @@ void unpack_top(const int x,          //
                 const int depth,      //
                 const int halo_depth, //
                 double *field,        //
-                double *buffer,       //
-                bool is_offload) {
-  const int x_inner = x - 2 * halo_depth;
-
-  ranged<int> it(y - halo_depth, y - halo_depth + depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      int buf_index = (kk - halo_depth) + (jj - (y - halo_depth)) * x_inner;
-      field[jj * x + kk] = buffer[buf_index];
-    }
+                double *buffer) {
+  ranged<int> it(0, x * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int offset = x * (y - halo_depth);
+    field[offset + index] = buffer[index];
   });
 }
 
@@ -143,20 +111,15 @@ void unpack_bottom(const int x,          //
                    const int depth,      //
                    const int halo_depth, //
                    double *field,        //
-                   double *buffer,       //
-                   bool is_offload) {
-  const int x_inner = x - 2 * halo_depth;
-
-  ranged<int> it(halo_depth - depth, halo_depth);
-  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int jj) {
-    for (int kk = halo_depth; kk < x - halo_depth; ++kk) {
-      int buf_index = (kk - halo_depth) + (jj - (halo_depth - depth)) * x_inner;
-      field[jj * x + kk] = buffer[buf_index];
-    }
+                   double *buffer) {
+  ranged<int> it(0, x * depth);
+  std::for_each(it.begin(), it.end(), [=](const int index) {
+    const int offset = x * (halo_depth - depth);
+    field[offset + index] = buffer[index];
   });
 }
 
-typedef void (*pack_kernel_f)(int, int, int, int, double *, double *, bool);
+typedef void (*pack_kernel_f)(int, int, int, int, double *, double *);
 
 // Either packs or unpacks data from/to buffers.
 void pack_or_unpack(const int x,          //
@@ -166,8 +129,7 @@ void pack_or_unpack(const int x,          //
                     const int face,       //
                     bool pack,            //
                     double *field,        //
-                    double *buffer,       //
-                    bool is_offload) {
+                    double *buffer) {
   pack_kernel_f kernel = NULL;
 
   switch (face) {
@@ -178,5 +140,5 @@ void pack_or_unpack(const int x,          //
     default: die(__LINE__, __FILE__, "Incorrect face provided: %d.\n", face);
   }
 
-  kernel(x, y, depth, halo_depth, field, buffer, is_offload);
+  kernel(x, y, depth, halo_depth, field, buffer);
 }

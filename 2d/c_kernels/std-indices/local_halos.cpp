@@ -10,12 +10,11 @@
  * 		LOCAL HALOS KERNEL
  */
 
-void update_left(const int x, const int y, const int halo_depth, const int depth, double *buffer, bool is_offload);
-void update_right(const int x, const int y, const int halo_depth, const int depth, double *buffer, bool is_offload);
-void update_top(const int x, const int y, const int halo_depth, const int depth, double *buffer, bool is_offload);
-void update_bottom(const int x, const int y, const int halo_depth, const int depth, double *buffer, bool is_offload);
-void update_face(const int x, const int y, const int halo_depth, const int *chunk_neighbours, const int depth, double *buffer,
-                 bool is_offload);
+void update_left(const int x, const int y, const int halo_depth, const int depth, double *buffer);
+void update_right(const int x, const int y, const int halo_depth, const int depth, double *buffer);
+void update_top(const int x, const int y, const int halo_depth, const int depth, double *buffer);
+void update_bottom(const int x, const int y, const int halo_depth, const int depth, double *buffer);
+void update_face(const int x, const int y, const int halo_depth, const int *chunk_neighbours, const int depth, double *buffer);
 
 typedef void (*update_kernel)(int, double *);
 
@@ -31,19 +30,18 @@ void local_halos(const int x,                    //
                  double *energy,                 //
                  double *u,                      //
                  double *p,                      //
-                 double *sd,                     //
-                 bool is_offload) {
+                 double *sd) {
 #define LAUNCH_UPDATE(index, buffer)                                                                                                       \
   if (fields_to_exchange[index]) {                                                                                                         \
-    update_face(x, y, halo_depth, chunk_neighbours, depth, buffer, is_offload);                                                            \
+    update_face(x, y, halo_depth, chunk_neighbours, depth, buffer);                                                                        \
   }
 
-  LAUNCH_UPDATE(FIELD_DENSITY, density);
-  LAUNCH_UPDATE(FIELD_P, p);
-  LAUNCH_UPDATE(FIELD_ENERGY0, energy0);
-  LAUNCH_UPDATE(FIELD_ENERGY1, energy);
-  LAUNCH_UPDATE(FIELD_U, u);
-  LAUNCH_UPDATE(FIELD_SD, sd);
+  LAUNCH_UPDATE(FIELD_DENSITY, density)
+  LAUNCH_UPDATE(FIELD_P, p)
+  LAUNCH_UPDATE(FIELD_ENERGY0, energy0)
+  LAUNCH_UPDATE(FIELD_ENERGY1, energy)
+  LAUNCH_UPDATE(FIELD_U, u)
+  LAUNCH_UPDATE(FIELD_SD, sd)
 #undef LAUNCH_UPDATE
 }
 
@@ -53,11 +51,10 @@ void update_face(const int x,                 //
                  const int halo_depth,        //
                  const int *chunk_neighbours, //
                  const int depth,             //
-                 double *buffer,              //
-                 bool is_offload) {
+                 double *buffer) {
 #define UPDATE_FACE(face, updateKernel)                                                                                                    \
   if (chunk_neighbours[face] == EXTERNAL_FACE) {                                                                                           \
-    updateKernel(x, y, halo_depth, depth, buffer, is_offload);                                                                             \
+    updateKernel(x, y, halo_depth, depth, buffer);                                                                                         \
   }
 
   UPDATE_FACE(CHUNK_LEFT, update_left);
@@ -71,24 +68,23 @@ void update_left(const int x,          //
                  const int y,          //
                  const int halo_depth, //
                  const int depth,      //
-                 double *buffer,       //
-                 bool is_offload) {
-    Range2d range(0, halo_depth, depth, y - halo_depth);
-    ranged<int> it(0, range.sizeXY());
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-      const auto kk = (i / range.sizeY()) + range.fromX;
-      const auto jj = (i % range.sizeY()) + range.fromY;
-      int base = jj * x;
-      buffer[base + (halo_depth - kk - 1)] = buffer[base + (halo_depth + kk)];
-    });
+                 double *buffer) {
+  Range2d range(0, halo_depth, depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const auto kk = (i / range.sizeY()) + range.fromX;
+    const auto jj = (i % range.sizeY()) + range.fromY;
+    int base = jj * x;
+    buffer[base + (halo_depth - kk - 1)] = buffer[base + (halo_depth + kk)];
+  });
 
-//  ranged<int> it(halo_depth, y - halo_depth);
-//  std::for_each(it.begin(), it.end(), [=](int jj) {
-//    for (int kk = 0; kk < depth; ++kk) {
-//      int base = jj * x;
-//      buffer[base + (halo_depth - kk - 1)] = buffer[base + (halo_depth + kk)];
-//    }
-//  });
+  //  ranged<int> it(halo_depth, y - halo_depth);
+  //  std::for_each(it.begin(), it.end(), [=](int jj) {
+  //    for (int kk = 0; kk < depth; ++kk) {
+  //      int base = jj * x;
+  //      buffer[base + (halo_depth - kk - 1)] = buffer[base + (halo_depth + kk)];
+  //    }
+  //  });
 }
 
 // Update right halo.
@@ -96,24 +92,23 @@ void update_right(const int x,          //
                   const int y,          //
                   const int halo_depth, //
                   const int depth,      //
-                  double *buffer,       //
-                  bool is_offload) {
-    Range2d range(0, halo_depth, depth, y - halo_depth);
-    ranged<int> it(0, range.sizeXY());
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-      const auto kk = (i / range.sizeY()) + range.fromX;
-      const auto jj = (i % range.sizeY()) + range.fromY;
-      int base = jj * x;
-      buffer[base + (x - halo_depth + kk)] = buffer[base + (x - halo_depth - 1 - kk)];
-    });
+                  double *buffer) {
+  Range2d range(0, halo_depth, depth, y - halo_depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const auto kk = (i / range.sizeY()) + range.fromX;
+    const auto jj = (i % range.sizeY()) + range.fromY;
+    int base = jj * x;
+    buffer[base + (x - halo_depth + kk)] = buffer[base + (x - halo_depth - 1 - kk)];
+  });
 
-//  ranged<int> it(halo_depth, y - halo_depth);
-//  std::for_each(it.begin(), it.end(), [=](int jj) {
-//    for (int kk = 0; kk < depth; ++kk) {
-//      int base = jj * x;
-//      buffer[base + (x - halo_depth + kk)] = buffer[base + (x - halo_depth - 1 - kk)];
-//    }
-//  });
+  //  ranged<int> it(halo_depth, y - halo_depth);
+  //  std::for_each(it.begin(), it.end(), [=](int jj) {
+  //    for (int kk = 0; kk < depth; ++kk) {
+  //      int base = jj * x;
+  //      buffer[base + (x - halo_depth + kk)] = buffer[base + (x - halo_depth - 1 - kk)];
+  //    }
+  //  });
 }
 
 // Update top halo.
@@ -121,25 +116,24 @@ void update_top(const int x,          //
                 const int y,          //
                 const int halo_depth, //
                 const int depth,      //
-                double *buffer,       //
-                bool is_offload) {
+                double *buffer) {
 
-    Range2d range(halo_depth, 0, x - halo_depth, depth);
-    ranged<int> it(0, range.sizeXY());
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-      const auto kk = (i / range.sizeY()) + range.fromX;
-      const auto jj = (i % range.sizeY()) + range.fromY;
-      int base = kk;
-      buffer[base + (y - halo_depth + jj) * x] = buffer[base + (y - halo_depth - 1 - jj) * x];
-    });
+  Range2d range(halo_depth, 0, x - halo_depth, depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const auto kk = (i / range.sizeY()) + range.fromX;
+    const auto jj = (i % range.sizeY()) + range.fromY;
+    int base = kk;
+    buffer[base + (y - halo_depth + jj) * x] = buffer[base + (y - halo_depth - 1 - jj) * x];
+  });
 
-//  ranged<int> it(halo_depth, x - halo_depth);
-//  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int kk) {
-//    for (int jj = 0; jj < depth; ++jj) {
-//      int base = kk;
-//      buffer[base + (y - halo_depth + jj) * x] = buffer[base + (y - halo_depth - 1 - jj) * x];
-//    }
-//  });
+  //  ranged<int> it(halo_depth, x - halo_depth);
+  //  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int kk) {
+  //    for (int jj = 0; jj < depth; ++jj) {
+  //      int base = kk;
+  //      buffer[base + (y - halo_depth + jj) * x] = buffer[base + (y - halo_depth - 1 - jj) * x];
+  //    }
+  //  });
 }
 
 // Updates bottom halo.
@@ -147,22 +141,21 @@ void update_bottom(const int x,          //
                    const int y,          //
                    const int halo_depth, //
                    const int depth,      //
-                   double *buffer,       //
-                   bool is_offload) {
-    Range2d range(halo_depth, 0, x - halo_depth, depth);
-    ranged<int> it(0, range.sizeXY());
-    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
-      const auto kk = (i / range.sizeY()) + range.fromX;
-      const auto jj = (i % range.sizeY()) + range.fromY;
-      int base = kk;
-      buffer[base + (halo_depth - jj - 1) * x] = buffer[base + (halo_depth + jj) * x];
-    });
+                   double *buffer) {
+  Range2d range(halo_depth, 0, x - halo_depth, depth);
+  ranged<int> it(0, range.sizeXY());
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
+    const auto kk = (i / range.sizeY()) + range.fromX;
+    const auto jj = (i % range.sizeY()) + range.fromY;
+    int base = kk;
+    buffer[base + (halo_depth - jj - 1) * x] = buffer[base + (halo_depth + jj) * x];
+  });
 
-//  ranged<int> it(halo_depth, x - halo_depth);
-//  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int kk) {
-//    for (int jj = 0; jj < depth; ++jj) {
-//      int base = kk;
-//      buffer[base + (halo_depth - jj - 1) * x] = buffer[base + (halo_depth + jj) * x];
-//    }
-//  });
+  //  ranged<int> it(halo_depth, x - halo_depth);
+  //  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int kk) {
+  //    for (int jj = 0; jj < depth; ++jj) {
+  //      int base = kk;
+  //      buffer[base + (halo_depth - jj - 1) * x] = buffer[base + (halo_depth + jj) * x];
+  //    }
+  //  });
 }

@@ -6,7 +6,7 @@
 #include <cstdlib>
 
 // Allocates, and zeroes and individual buffer
-void allocate_buffer(double **a, int x, int y) {
+static void allocate_buffer(double **a, int x, int y) {
   *a = alloc_raw<double>(x * y);
 
   if (*a == NULL) {
@@ -50,7 +50,7 @@ void kernel_initialise(Settings *settings,    //
 
   print_and_log(settings, "Performing this solve with the C++ std::par_unseq %s solver\n", settings->solver_name);
 
-  if(settings->device_selector){
+  if (settings->device_selector) {
     print_and_log(settings, "Device selection is unsupported for this model, ignoring selector `%s`\n", settings->device_selector);
   }
 
@@ -78,10 +78,15 @@ void kernel_initialise(Settings *settings,    //
   allocate_buffer(vertex_dy, 1, y + 1);
   allocate_buffer(vertex_x, x + 1, 1);
   allocate_buffer(vertex_y, 1, y + 1);
-  allocate_buffer(cg_alphas, settings->max_iters, 1);
-  allocate_buffer(cg_betas, settings->max_iters, 1);
-  allocate_buffer(cheby_alphas, settings->max_iters, 1);
-  allocate_buffer(cheby_betas, settings->max_iters, 1);
+
+  *cg_alphas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
+  *cg_betas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
+  *cheby_alphas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
+  *cheby_betas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
+  std::fill(*cg_alphas, *cg_alphas + settings->max_iters, 0);
+  std::fill(*cg_betas, *cg_betas + settings->max_iters, 0);
+  std::fill(*cheby_alphas, *cheby_alphas + settings->max_iters, 0);
+  std::fill(*cheby_betas, *cheby_betas + settings->max_iters, 0);
 }
 
 void kernel_finalise(double *density0,     //
