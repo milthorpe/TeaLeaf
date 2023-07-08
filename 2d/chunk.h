@@ -80,6 +80,7 @@ typedef struct Chunk
 
 struct Settings;
 
+void dump_chunk(const char* prefix, const char* suffix, Chunk* chunk, Settings* settings);
 void initialise_chunk(Chunk* chunk, struct Settings* settings, int x, int y);
 void finalise_chunk(Chunk* chunk);
 
