@@ -29,7 +29,7 @@ void kernel_initialise(
         double** w, double** kx, double** ky, double** sd, 
         double** volume, double** x_area, double** y_area, double** cell_x, 
         double** cell_y, double** cell_dx, double** cell_dy, double** vertex_dx, 
-        double** vertex_dy, double** vertex_x, double** vertex_y, 
+        double** vertex_dy, double** vertex_x, double** vertex_y, double **comm_buffer,
         double** cg_alphas, double** cg_betas, double** cheby_alphas, 
         double** cheby_betas);
 
@@ -39,7 +39,7 @@ void kernel_finalise(
         double* w, double* kx, double* ky, double* sd, 
         double* volume, double* x_area, double* y_area, double* cell_x, 
         double* cell_y, double* cell_dx, double* cell_dy, double* vertex_dx, 
-        double* vertex_dy, double* vertex_x, double* vertex_y, 
+        double* vertex_dy, double* vertex_x, double* vertex_y, double *comm_buffer,
         double* cg_alphas, double* cg_betas, double* cheby_alphas, 
         double* cheby_betas);
 

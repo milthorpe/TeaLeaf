@@ -17,7 +17,7 @@
 #include <CL/sycl.hpp>
 
 const static auto EXEC_POLICY = oneapi::dpl::execution::device_policy<>{
-        oneapi::dpl::execution::make_device_policy(cl::sycl::default_selector{})
+        oneapi::dpl::execution::make_device_policy(oneapi::dpl::execution::dpcpp_default)
 };
 
 template<typename T>

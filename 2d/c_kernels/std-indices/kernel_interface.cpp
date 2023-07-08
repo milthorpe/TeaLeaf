@@ -1,5 +1,6 @@
 #include "../../kernel_interface.h"
 #include "c_kernels.h"
+#include "dpl_shim.h"
 
 // Initialisation kernels
 void run_set_chunk_data(Chunk* chunk, Settings* settings)
@@ -27,15 +28,15 @@ void run_set_chunk_state(Chunk* chunk, Settings* settings, State* states)
 
 void run_kernel_initialise(Chunk* chunk, Settings* settings)
 {
-    kernel_initialise(settings, chunk->x, chunk->y, &(chunk->density0), 
-            &(chunk->density), &(chunk->energy0), &(chunk->energy), 
-            &(chunk->u), &(chunk->u0), &(chunk->p), &(chunk->r), 
-            &(chunk->mi), &(chunk->w), &(chunk->kx), &(chunk->ky), 
-            &(chunk->sd), &(chunk->volume), 
-            &(chunk->x_area), &(chunk->y_area), &(chunk->cell_x), 
+    kernel_initialise(settings, chunk->x, chunk->y, &(chunk->density0),
+            &(chunk->density), &(chunk->energy0), &(chunk->energy),
+            &(chunk->u), &(chunk->u0), &(chunk->p), &(chunk->r),
+            &(chunk->mi), &(chunk->w), &(chunk->kx), &(chunk->ky),
+            &(chunk->sd), &(chunk->volume),
+            &(chunk->x_area), &(chunk->y_area), &(chunk->cell_x),
             &(chunk->cell_y), &(chunk->cell_dx), &(chunk->cell_dy),
-            &(chunk->vertex_dx), &(chunk->vertex_dy), &(chunk->vertex_x), 
-            &(chunk->vertex_y), &(chunk->cg_alphas), &(chunk->cg_betas), 
+            &(chunk->vertex_dx), &(chunk->vertex_dy), &(chunk->vertex_x), &(chunk->vertex_y),
+            &(chunk->ext->comm_buffer), &(chunk->cg_alphas), &(chunk->cg_betas),
             &(chunk->cheby_alphas), &(chunk->cheby_betas));
 }
 
@@ -48,7 +49,7 @@ void run_kernel_finalise(
             chunk->kx, chunk->ky, chunk->sd, chunk->volume, chunk->x_area,
             chunk->y_area, chunk->cell_x, chunk->cell_y, chunk->cell_dx,
             chunk->cell_dy, chunk->vertex_dx, chunk->vertex_dy, chunk->vertex_x,
-            chunk->vertex_y, chunk->cg_alphas, chunk->cg_betas,
+            chunk->vertex_y, chunk->ext->comm_buffer, chunk->cg_alphas, chunk->cg_betas,
             chunk->cheby_alphas, chunk->cheby_betas);
 }
 
@@ -69,9 +70,22 @@ void run_pack_or_unpack(
         int face, bool pack, double* field, double* buffer)
 {
     START_PROFILING(settings->kernel_profile);
+
+    const int buffer_length =
+        ((face == CHUNK_LEFT || face == CHUNK_RIGHT) ? chunk->y * depth : chunk->x * depth);
+
+    if (!pack) {
+      std::copy(buffer, buffer + buffer_length, chunk->ext->comm_buffer);
+    }
+
     pack_or_unpack(
             chunk->x, chunk->y, depth, settings->halo_depth,
-            face, pack, field, buffer);
+            face, pack, field, chunk->ext->comm_buffer);
+
+    if (pack) {
+      std::copy(chunk->ext->comm_buffer, chunk->ext->comm_buffer + buffer_length, buffer);
+    }
+
     STOP_PROFILING(settings->kernel_profile, __func__);
 }
 

@@ -5,5 +5,5 @@ typedef double* FieldBufferType;
 // Empty extension point
 typedef struct ChunkExtension
 {
-//    double* d_comm_buffer;
+  FieldBufferType comm_buffer;
 } ChunkExtension;

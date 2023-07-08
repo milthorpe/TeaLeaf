@@ -43,6 +43,7 @@ void kernel_initialise(Settings *settings,    //
                        double **vertex_dy,    //
                        double **vertex_x,     //
                        double **vertex_y,     //
+                       double **comm_buffer,  //
                        double **cg_alphas,    //
                        double **cg_betas,     //
                        double **cheby_alphas, //
@@ -78,6 +79,7 @@ void kernel_initialise(Settings *settings,    //
   allocate_buffer(vertex_dy, 1, y + 1);
   allocate_buffer(vertex_x, x + 1, 1);
   allocate_buffer(vertex_y, 1, y + 1);
+  allocate_buffer(comm_buffer, tealeaf_MAX(x, y) * settings->halo_depth, 1);
 
   *cg_alphas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
   *cg_betas = static_cast<double *>(std::malloc(sizeof(double) * settings->max_iters));
@@ -113,6 +115,7 @@ void kernel_finalise(double *density0,     //
                      double *vertex_dy,    //
                      double *vertex_x,     //
                      double *vertex_y,     //
+                     double *comm_buffer, //
                      double *cg_alphas,    //
                      double *cg_betas,     //
                      double *cheby_alphas, //
@@ -141,8 +144,10 @@ void kernel_finalise(double *density0,     //
   dealloc_raw(vertex_dy);
   dealloc_raw(vertex_x);
   dealloc_raw(vertex_y);
-  dealloc_raw(cg_alphas);
-  dealloc_raw(cg_betas);
-  dealloc_raw(cheby_alphas);
-  dealloc_raw(cheby_betas);
+  dealloc_raw(comm_buffer);
+
+  free(cg_alphas);
+  free(cg_betas);
+  free(cheby_alphas);
+  free(cheby_betas);
 }
