@@ -11,7 +11,7 @@ void pack_left(const int x,          //
                double *field,        //
                double *buffer) {
   ranged<int> it(0, y * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int lines = index / depth;
     const int offset = halo_depth + lines * (x - depth);
     buffer[index] = field[offset + index];
@@ -26,7 +26,7 @@ void pack_right(const int x,          //
                 double *field,        //
                 double *buffer) {
   ranged<int> it(0, y * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int lines = index / depth;
     const int offset = x - halo_depth - depth + lines * (x - depth);
     buffer[index] = field[offset + index];
@@ -41,7 +41,7 @@ void pack_top(const int x,          //
               double *field,        //
               double *buffer) {
   ranged<int> it(0, x * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int offset = x * (y - halo_depth - depth);
     buffer[index] = field[offset + index];
   });
@@ -55,7 +55,7 @@ void pack_bottom(const int x,          //
                  double *field,        //
                  double *buffer) {
   ranged<int> it(0, x * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int offset = x * halo_depth;
     buffer[index] = field[offset + index];
   });
@@ -69,7 +69,7 @@ void unpack_left(const int x,          //
                  double *field,        //
                  double *buffer) {
   ranged<int> it(0, y * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int lines = index / depth;
     const int offset = halo_depth - depth + lines * (x - depth);
     field[offset + index] = buffer[index];
@@ -84,7 +84,7 @@ void unpack_right(const int x,          //
                   double *field,        //
                   double *buffer) {
   ranged<int> it(0, y * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int lines = index / depth;
     const int offset = x - halo_depth + lines * (x - depth);
     field[offset + index] = buffer[index];
@@ -99,7 +99,7 @@ void unpack_top(const int x,          //
                 double *field,        //
                 double *buffer) {
   ranged<int> it(0, x * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int offset = x * (y - halo_depth);
     field[offset + index] = buffer[index];
   });
@@ -113,7 +113,7 @@ void unpack_bottom(const int x,          //
                    double *field,        //
                    double *buffer) {
   ranged<int> it(0, x * depth);
-  std::for_each(it.begin(), it.end(), [=](const int index) {
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](const int index) {
     const int offset = x * (halo_depth - depth);
     field[offset + index] = buffer[index];
   });
