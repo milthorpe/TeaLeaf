@@ -1,5 +1,8 @@
-#include <math.h>
 #include "../../settings.h"
+#include "dpl_shim.h"
+#include "ranged.h"
+#include <algorithm>
+#include <math.h>
 
 /*
  *      SET CHUNK STATE KERNEL
@@ -7,79 +10,60 @@
  */
 
 // Entry point for set chunk state kernel
-void set_chunk_state(
-        int x,
-        int y,
-        double* vertex_x,
-        double* vertex_y,
-        double* cell_x,
-        double* cell_y,
-        double* density,
-        double* energy0,
-        double* u,
-        const int num_states,
-        State* states)
-{
-    // Set the initial state
-    for(int ii = 0; ii != x*y; ++ii)
-    {
-        energy0[ii] = states[0].energy;
-        density[ii] = states[0].density;
-    }	
+void set_chunk_state(int x,                //
+                     int y,                //
+                     double *vertex_x,     //
+                     double *vertex_y,     //
+                     double *cell_x,       //
+                     double *cell_y,       //
+                     double *density,      //
+                     double *energy0,      //
+                     double *u,            //
+                     const int num_states, //
+                     State *states) {
+  double default_energy = states[0].energy;
+  double default_density = states[0].density;
+  // Set the initial state
+  ranged<int> it(0, x * y);
+  std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int index) {
+    energy0[index] = default_energy;
+    density[index] = default_density;
+  });
 
-    // Apply all of the states in turn
-    for(int ss = 1; ss < num_states; ++ss)
-    {
-        for(int jj = 0; jj < y; ++jj) 
-        {
-            for(int kk = 0; kk < x; ++kk) 
-            {
-                int apply_state = 0;
+  // Apply all of the states in turn
+  for (int ss = 1; ss < num_states; ++ss) {
+    State state = states[ss];
+    ranged<int> it(0, x * y);
+    std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int index) {
+      const size_t kk = index % x;
+      const size_t jj = index / x;
 
-                if(states[ss].geometry == RECTANGULAR)
-                {
-                    apply_state = (
-                            vertex_x[kk+1] >= states[ss].x_min && 
-                            vertex_x[kk] < states[ss].x_max    &&
-                            vertex_y[jj+1] >= states[ss].y_min &&
-                            vertex_y[jj] < states[ss].y_max);
-                }
-                else if(states[ss].geometry == CIRCULAR)
-                {
-                    double radius = sqrt(
-                            (cell_x[kk]-states[ss].x_min)*
-                            (cell_x[kk]-states[ss].x_min)+
-                            (cell_y[jj]-states[ss].y_min)*
-                            (cell_y[jj]-states[ss].y_min));
+      bool applyState = false;
 
-                    apply_state = (radius <= states[ss].radius);
-                }
-                else if(states[ss].geometry == POINT)
-                {
-                    apply_state = (
-                            vertex_x[kk] == states[ss].x_min &&
-                            vertex_y[jj] == states[ss].y_min);
-                }
+      if (state.geometry == RECTANGULAR) { // Rectangular state
 
-                // Check if state applies at this vertex, and apply
-                if(apply_state)
-                {
-                    const int index = kk + jj*x;
-                    energy0[index] = states[ss].energy;
-                    density[index] = states[ss].density;
-                }
-            }
-        }
-    }
+        applyState = (vertex_x[kk + 1] >= state.x_min && vertex_x[kk] < state.x_max && //
+                      vertex_y[jj + 1] >= state.y_min && vertex_y[jj] < state.y_max);
+      } else if (state.geometry == CIRCULAR) { // Circular state
 
-    // Set an initial state for u
-    for(int jj = 1; jj != y-1; ++jj) 
-    {
-        for(int kk = 1; kk != x-1; ++kk) 
-        {
-            const int index = kk + jj*x;
-            u[index] = energy0[index]*density[index];
-        }
-    }
+        double radius = std::sqrt((cell_x[kk] - state.x_min) * (cell_x[kk] - state.x_min) + //
+                                  (cell_y[jj] - state.y_min) * (cell_y[jj] - state.y_min));
+
+        applyState = (radius <= state.radius);
+      } else if (state.geometry == POINT) // Point state
+      {
+        applyState = (vertex_x[kk] == state.x_min && vertex_y[jj] == state.y_min);
+      }
+
+      // Check if state applies at this vertex, and apply
+      if (applyState) {
+        energy0[index] = state.energy;
+        density[index] = state.density;
+      }
+
+      if (kk > 0 && kk < x - 1 && jj > 0 && jj < y - 1) {
+        u[index] = energy0[index] * density[index];
+      }
+    });
+  }
 }
-
