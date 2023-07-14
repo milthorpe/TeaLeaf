@@ -2,7 +2,7 @@
 #include "dpl_shim.h"
 #include "ranged.h"
 #include <algorithm>
-#include <math.h>
+#include <cmath>
 
 /*
  *      SET CHUNK STATE KERNEL
