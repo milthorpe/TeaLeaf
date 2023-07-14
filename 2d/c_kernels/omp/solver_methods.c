@@ -14,7 +14,7 @@ void copy_u(
         double* u)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -40,7 +40,7 @@ void calculate_residual(
         double* ky)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -65,7 +65,7 @@ void calculate_2norm(
 {
     double norm_temp = 0.0;
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for reduction(+:norm_temp)
+#pragma omp target teams distribute parallel for simd reduction(+:norm_temp) collapse(2)
 #else
 #pragma omp parallel for reduction(+:norm_temp)
 #endif
@@ -91,7 +91,7 @@ void finalise(
         double* u)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif

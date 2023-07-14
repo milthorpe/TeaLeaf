@@ -88,7 +88,7 @@ void update_left(
 {
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) collapse(2)
+#pragma omp target teams distribute parallel for simd if(is_offload) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -112,7 +112,7 @@ void update_right(
         bool is_offload)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) collapse(2)
+#pragma omp target teams distribute parallel for simd if(is_offload) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -137,7 +137,7 @@ void update_top(
         bool is_offload)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) collapse(2)
+#pragma omp target teams distribute parallel for simd if(is_offload) collapse(2)
 #endif
     for(int jj = 0; jj < depth; ++jj)
     {
@@ -163,7 +163,7 @@ void update_bottom(
         bool is_offload)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) collapse(2)
+#pragma omp target teams distribute parallel for simd if(is_offload) collapse(2)
 #endif
     for(int jj = 0; jj < depth; ++jj)
     {

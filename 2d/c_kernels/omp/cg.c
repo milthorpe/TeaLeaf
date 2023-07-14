@@ -29,7 +29,7 @@ void cg_init(
   }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -45,7 +45,7 @@ void cg_init(
   }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -60,7 +60,7 @@ void cg_init(
   }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -79,7 +79,7 @@ void cg_init(
   double rro_temp = 0.0;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for reduction(+:rro_temp)
+#pragma omp target teams distribute parallel for simd reduction(+:rro_temp) collapse(2)
 #else
 #pragma omp parallel for reduction(+:rro_temp)
 #endif
@@ -114,7 +114,7 @@ void cg_calc_w(
   double pw_temp = 0.0;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for reduction(+:pw_temp)
+#pragma omp target teams distribute parallel for simd reduction(+:pw_temp) collapse(2)
 #else
 #pragma omp parallel for reduction(+:pw_temp)
 #endif
@@ -147,7 +147,7 @@ void cg_calc_ur(
   double rrn_temp = 0.0;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for reduction(+:rrn_temp)
+#pragma omp target teams distribute parallel for simd reduction(+:rrn_temp) collapse(2)
 #else
 #pragma omp parallel for reduction(+:rrn_temp)
 #endif
@@ -176,7 +176,7 @@ void cg_calc_p(
     double* r)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif

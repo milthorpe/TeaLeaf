@@ -27,7 +27,7 @@ void jacobi_init(
     }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -43,7 +43,7 @@ void jacobi_init(
         }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -78,7 +78,7 @@ void jacobi_iterate(
         double* r)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -94,7 +94,7 @@ void jacobi_iterate(
     double err=0.0;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for reduction(+: err)
+#pragma omp target teams distribute parallel for simd reduction(+: err) collapse(2)
 #else
 #pragma omp parallel for reduction(+: err)
 #endif

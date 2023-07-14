@@ -14,7 +14,7 @@ void ppcg_init(
         double* sd)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -42,7 +42,7 @@ void ppcg_inner_iteration(
         double* sd)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -58,7 +58,7 @@ void ppcg_inner_iteration(
     }
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif

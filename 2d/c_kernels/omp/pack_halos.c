@@ -14,7 +14,7 @@ void pack_left(
     const int y_inner = y - 2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(from: buffer[:depth*y_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(from: buffer[:depth*y_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -41,7 +41,7 @@ void pack_right(
     const int y_inner = y - 2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(from: buffer[:depth*y_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(from: buffer[:depth*y_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -68,7 +68,7 @@ void pack_top(
     const int x_inner = x-2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(from: buffer[:depth*x_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(from: buffer[:depth*x_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -95,7 +95,7 @@ void pack_bottom(
     const int x_inner = x-2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(from: buffer[:depth*x_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(from: buffer[:depth*x_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -122,7 +122,7 @@ void unpack_left(
     const int y_inner = y - 2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(to: buffer[:depth*y_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(to: buffer[:depth*y_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -149,7 +149,7 @@ void unpack_right(
     const int y_inner = y - 2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(to: buffer[:depth*y_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(to: buffer[:depth*y_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -176,7 +176,7 @@ void unpack_top(
     const int x_inner = x-2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(to: buffer[:depth*x_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(to: buffer[:depth*x_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -203,7 +203,7 @@ void unpack_bottom(
     const int x_inner = x-2*halo_depth;
 
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for if(is_offload) map(to: buffer[:depth*x_inner])
+#pragma omp target teams distribute parallel for simd if(is_offload) map(to: buffer[:depth*x_inner]) collapse(2)
 #else
 #pragma omp parallel for
 #endif

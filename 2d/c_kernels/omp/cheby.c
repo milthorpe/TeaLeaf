@@ -13,7 +13,7 @@ void cheby_calc_u(
         double* p)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -42,7 +42,7 @@ void cheby_init(
         double* ky)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
@@ -77,7 +77,7 @@ void cheby_iterate(
         double* ky)
 {
 #ifdef OMP_TARGET
-#pragma omp target teams distribute parallel for
+#pragma omp target teams distribute parallel for simd collapse(2)
 #else
 #pragma omp parallel for
 #endif
