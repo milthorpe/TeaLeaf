@@ -30,6 +30,38 @@ int main(int argc, char** argv)
   print_and_log(settings, "Using output:   %s\n", settings->tea_out_filename);
   print_and_log(settings, "Using problems: %s\n", settings->test_problem_filename);
 
+#ifndef NO_MPI
+
+  long chunk_comms_total_x = 0, chunk_comms_total_y = 0;
+  for(int i = 0; i < settings->num_chunks_per_rank; ++i){
+    chunk_comms_total_x += chunks[i].x * settings->halo_depth * NUM_FIELDS;
+    chunk_comms_total_y += chunks[i].y * settings->halo_depth * NUM_FIELDS;
+  }
+  long global_chunks_total_x = 0, global_chunks_total_y = 0;
+  MPI_Reduce(&chunk_comms_total_x, &global_chunks_total_x, 1, MPI_LONG, MPI_SUM, MASTER, MPI_COMM_WORLD);
+  MPI_Reduce(&chunk_comms_total_y, &global_chunks_total_y, 1, MPI_LONG, MPI_SUM, MASTER, MPI_COMM_WORLD);
+  print_and_log(settings, "MPI total x buffer elements: %ld\n", global_chunks_total_x);
+  print_and_log(settings, "MPI total y buffer elements: %ld\n", global_chunks_total_y);
+  print_and_log(settings, "MPI total x buffer size:     %ld KB\n", chunk_comms_total_x * sizeof(double) / 1000);
+  print_and_log(settings, "MPI total y buffer size:     %ld KB\n", chunk_comms_total_y * sizeof(double) / 1000);
+  const char *mpi_cuda_aware_ct =
+  #if defined(MPIX_CUDA_AWARE_SUPPORT) && MPIX_CUDA_AWARE_SUPPORT
+      "true";
+  #elif defined(MPIX_CUDA_AWARE_SUPPORT) && !MPIX_CUDA_AWARE_SUPPORT
+      "false";
+  #else
+      "unknown";
+  #endif
+  const char *mpi_cuda_aware_rt =
+  #if defined(MPIX_CUDA_AWARE_SUPPORT)
+      MPIX_Query_cuda_support() ? "true" : "false";
+  #else
+      "unknown";
+  #endif
+  print_and_log(settings, "MPI built with CUDA-awareness: %s\n", mpi_cuda_aware_ct);
+  print_and_log(settings, "MPI runtime CUDA-awareness:    %s\n", mpi_cuda_aware_rt);
+
+#endif
 
   // Perform the solve using default or overloaded diffuse
 #ifndef DIFFUSE_OVERLOAD

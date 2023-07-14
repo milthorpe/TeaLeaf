@@ -4,6 +4,9 @@
 
 #ifndef NO_MPI
 #include <mpi.h>
+#if __has_include("mpi-ext.h")  // C23, but everyone supports this already
+  #include "mpi-ext.h" // for CUDA-aware MPI checks
+#endif
 #include "settings.h"
 #include "chunk.h"
 
