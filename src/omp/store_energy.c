@@ -1,0 +1,13 @@
+#include "shared.h"
+
+// Store original energy state
+void store_energy(int x, int y, double *energy0, double *energy) {
+#ifdef OMP_TARGET
+  // no-oop
+#else
+  #pragma omp parallel for
+#endif
+  for (int ii = 0; ii < x * y; ++ii) {
+    energy[ii] = energy0[ii];
+  }
+}
