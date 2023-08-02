@@ -114,7 +114,8 @@ register_flag_optional(OFFLOAD_APPEND_LINK_FLAG
 
 macro(setup)
     find_package(OpenMP REQUIRED)
-    register_link_library(OpenMP::OpenMP_C) # TeaLeaf OpenMP kernels are in C, not CXX
+    register_link_library(OpenMP::OpenMP_CXX)
+    set(CMAKE_CXX_STANDARD 17)
 
     string(TOUPPER ${CMAKE_CXX_COMPILER_ID} COMPILER)
     if (NOT ARCH)
@@ -143,16 +144,16 @@ macro(setup)
 
     elseif ("${OFFLOAD}" STREQUAL ON)
         #  offload but with custom flags
-        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD)
+        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD) # DIFFUSE_OVERLOAD
         separate_arguments(OFFLOAD_FLAGS)
         set(OMP_FLAGS ${OFFLOAD_FLAGS})
     elseif ((DEFINED OFFLOAD) AND OFFLOAD_FLAGS)
         # offload but OFFLOAD_FLAGS overrides
-        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD)
+        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD) # DIFFUSE_OVERLOAD
         separate_arguments(OFFLOAD_FLAGS)
         list(OMP_FLAGS APPEND ${OFFLOAD_FLAGS})
     else ()
-        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD)
+        register_definitions(OMP_TARGET DIFFUSE_OVERLOAD) # DIFFUSE_OVERLOAD
 
         # handle the vendor:arch value
         string(REPLACE ":" ";" OFFLOAD_TUPLE "${OFFLOAD}")
@@ -187,7 +188,6 @@ macro(setup)
     message(STATUS "OMP Link flags : ${OMP_LINK_FLAGS}")
     # propagate flags to linker so that it links with the offload stuff as well
     register_append_cxx_flags(ANY ${OMP_FLAGS})
-    register_append_c_flags(ANY ${OMP_FLAGS})
     if (OFFLOAD_APPEND_LINK_FLAG)
         register_append_link_flags(${OMP_FLAGS})
     endif ()

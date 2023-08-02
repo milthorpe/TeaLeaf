@@ -6,11 +6,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # some nicer defaults for standard C
-set(CMAKE_C_EXTENSIONS OFF)
 set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_STANDARD 11)
 
 
 include(FetchContent)
@@ -26,7 +23,31 @@ include(FetchContent)
 
 ########
 #########
-#set(MODEL std-indices)
+if (NOT MODEL)
+    #    set(MODEL cuda)
+    #    set(CMAKE_CUDA_COMPILER /opt/nvidia/hpc_sdk/Linux_x86_64/23.3/compilers/bin/nvcc)
+    #    set(CUDA_ARCH sm_60)
+
+#    set(MODEL std-indices)
+    set(MODEL std-indices)
+#        set(KOKKOS_IN_TREE /home/tom/Downloads/kokkos-4.0.01/)
+#        set(Kokkos_ENABLE_OPENMP ON)
+
+
+#    set(MODEL sycl-usm)
+#    set(SYCL_COMPILER ONEAPI-ICPX)
+#    set(SYCL_COMPILER_DIR /opt/intel/oneapi/compiler/2023.1.0/linux/bin-llvm/)
+#    set(CXX_EXTRA_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+#    set(CXX_EXTRA_LINK_FLAGS -fsycl-targets=nvptx64-nvidia-cuda --cuda-path=/opt/nvidia/hpc_sdk/Linux_x86_64/2023/cuda/ -Xsycl-target-backend --cuda-gpu-arch=sm_60)
+
+    SET(ENABLE_MPI ON)
+    SET(ENABLE_PROFILING ON)
+    set(USE_TBB ON)
+
+    #        SET(USE_TBB ON)
+    set(MPI_HOME /usr/lib64/openmpi/)
+endif ()
+
 #set(NVHPC_OFFLOAD cc60)
 #set(CXX_EXTRA_FLAGS -stdpar=multicore)
 ###########
@@ -74,8 +95,6 @@ include(FetchContent)
 ## Flags for debugging only, enable for development (ASan only works on few models)
 set(SANITIZE OFF)
 if (SANITIZE)
-    set(C_EXTRA_FLAGS -fsanitize=address -fsanitize=undefined)
-    set(C_EXTRA_LINK_FLAGS -fsanitize=address -fsanitize=undefined)
     set(CXX_EXTRA_FLAGS -fsanitize=address -fsanitize=undefined)
     set(CXX_EXTRA_LINK_FLAGS -fsanitize=address -fsanitize=undefined)
 endif ()
@@ -97,10 +116,8 @@ if ((NOT BUILD_TYPE STREQUAL RELEASE) AND (NOT BUILD_TYPE STREQUAL DEBUG))
 endif ()
 
 # setup some defaults flags for everything
-set(DEFAULT_DEBUG_C_FLAGS -O2 ${DEBUG_FLAGS} -g)
-set(DEFAULT_RELEASE_C_FLAGS -O3   -march=native -g)
-set(DEFAULT_DEBUG_CXX_FLAGS -O2)
-set(DEFAULT_RELEASE_CXX_FLAGS -O3   -march=native -g)
+set(DEFAULT_DEBUG_CXX_FLAGS -O2 -Wall)
+set(DEFAULT_RELEASE_CXX_FLAGS -O3 -Wall -march=native)
 
 macro(hint_flag FLAG DESCRIPTION)
     if (NOT DEFINED ${FLAG})
@@ -127,24 +144,6 @@ hint_flag(CXX_EXTRA_LINKER_FLAGS "
 # copy CXX_EXTRA_FLAGS <- CXX_EXTRA_LINK_FLAGS
 if ((DEFINED CXX_EXTRA_FLAGS) AND (NOT DEFINED CXX_EXTRA_LINK_FLAGS))
     set(CXX_EXTRA_LINK_FLAGS ${CXX_EXTRA_FLAGS})
-endif ()
-
-
-hint_flag(C_EXTRA_FLAGS "
-        Appends to common compile flags. These will be appended at link phase as well.
-        To use separate flags at link phase, set `C_EXTRA_LINK_FLAGS`")
-hint_flag(C_EXTRA_LINK_FLAGS "
-        Appends to link flags which appear *before* the objects.
-        Do not use this for linking libraries, as the link line is order-dependent")
-hint_flag(C_EXTRA_LIBRARIES "
-        Append to link flags which appear *after* the objects.
-        Use this for linking extra libraries (e.g `-lmylib`, or simply `mylib`)")
-hint_flag(C_EXTRA_LINKER_FLAGS "
-        Append to linker flags (i.e GCC's `-Wl` or equivalent)")
-
-# copy CXX_EXTRA_FLAGS <- CXX_EXTRA_LINK_FLAGS
-if ((DEFINED C_EXTRA_FLAGS) AND (NOT DEFINED C_EXTRA_LINK_FLAGS))
-    set(C_EXTRA_LINK_FLAGS ${C_EXTRA_FLAGS})
 endif ()
 
 
@@ -177,7 +176,7 @@ if (USE_ONEDPL)
     FetchContent_Declare(
             oneDPL
             GIT_REPOSITORY https://github.com/oneapi-src/oneDPL.git
-            GIT_TAG oneDPL-2022.1.0-rc3
+            GIT_TAG oneDPL-2022.2.0-rc1
     )
     string(TOLOWER ${USE_ONEDPL} ONEDPL_BACKEND)
     # XXX oneDPL looks for omp instead of openmp, which mismatches(!) with ONEDPL_PAR_BACKEND if using find_package
@@ -215,47 +214,41 @@ include(cmake/register_models.cmake)
 register_flag_optional(ENABLE_MPI "Enables MPI support at compile time, set MPI_HOME (e.g -DMPI_HOME=/usr/lib64/openmpi/) if not on PATH" OFF)
 register_flag_optional(ENABLE_PROFILING "Enables kernel profiler, this may introduce synchronisation overhead for some models." OFF)
 
+if ("${MODEL}" STREQUAL omp-target)
+    set(MODEL omp)
+endif ()
+
+set(MODEL_SRC
+        cg.cpp
+        cheby.cpp
+        jacobi.cpp
+        kernel_initialise.cpp
+        local_halos.cpp
+        pack_halos.cpp
+        ppcg.cpp
+        solver_methods.cpp
+        )
+
 # register out models <model_name> <preprocessor_def_name> <source files...>
-register_model(omp USE_OMP
-        cg.c cheby.c field_summary.c diffuse_overload.c jacobi.c kernel_initialise.c
-        kernel_interface.c local_halos.c pack_halos.c ppcg.c set_chunk_data.c set_chunk_state.c
-        solver_methods.c store_energy.c)
-register_model(serial USE_SERIAL
-        cg.c cheby.c field_summary.c jacobi.c kernel_initialise.c kernel_interface.c
-        local_halos.c pack_halos.c ppcg.c set_chunk_data.c set_chunk_state.c
-        solver_methods.c store_energy.c)
-register_model(cuda USE_CUDA
-        cg.cu cheby.cu cuknl_shared.cu field_summary.cu jacobi.cu kernel_initialise.cu
-        kernel_interface.cu local_halos.cu pack_halos.cu ppcg.cu set_chunk_data.cu
-        set_chunk_state.cu set_field.cu solver_methods.cu store_energy.cu)
-register_model(hip USE_HIP
-        cg.cpp cheby.cpp cuknl_shared.cpp field_summary.cpp jacobi.cpp kernel_initialise.cpp
-        kernel_interface.cpp local_halos.cpp pack_halos.cpp ppcg.cpp set_chunk_data.cpp
-        set_chunk_state.cpp set_field.cpp solver_methods.cpp store_energy.cpp)
-register_model(std-indices USE_STD
-        cg.cpp cheby.cpp field_summary.cpp jacobi.cpp kernel_initialise.cpp kernel_interface.cpp
-        local_halos.cpp pack_halos.cpp ppcg.cpp set_chunk_data.cpp set_chunk_state.cpp
-        solver_methods.cpp store_energy.cpp)
-register_model(kokkos USE_KOKKOS
-        cg.cpp cheby.cpp jacobi.cpp kernel_initialise.cpp kernel_interface.cpp local_halos.cpp
-        pack_halos.cpp ppcg.cpp set_chunk_data.cpp set_chunk_state.cpp
-        solver_methods.cpp store_energy.cpp)
 
-register_model(sycl-acc USE_SYCL_ACC
-        cg.cpp cheby.cpp field_summary.cpp jacobi.cpp kernel_initialise.cpp kernel_interface.cpp
-        local_halos.cpp pack_halos.cpp ppcg.cpp set_chunk_data.cpp set_chunk_state.cpp
-        solver_methods.cpp store_energy.cpp)
+register_model(serial USE_SERIAL ${MODEL_SRC})
+register_model(omp USE_OMP ${MODEL_SRC} diffuse_overload.cpp)
+register_model(kokkos USE_KOKKOS ${MODEL_SRC})
+register_model(cuda USE_CUDA ${MODEL_SRC})
+register_model(hip USE_HIP ${MODEL_SRC})
+register_model(std-indices USE_STD ${MODEL_SRC})
+register_model(sycl-acc USE_SYCL_ACC ${MODEL_SRC})
+register_model(sycl-usm USE_SYCL_USM ${MODEL_SRC})
 
-register_model(sycl-usm USE_SYCL_USM
-        cg.cpp cheby.cpp field_summary.cpp jacobi.cpp kernel_initialise.cpp kernel_interface.cpp
-        local_halos.cpp pack_halos.cpp ppcg.cpp set_chunk_data.cpp set_chunk_state.cpp
-        solver_methods.cpp store_energy.cpp)
+if ("${MODEL}" STREQUAL omp-target)
+    set(BIN_NAME omp-target-tealeaf)
+endif ()
 
-#register_model(sycl SYCL fasten.hpp)
-#register_model(acc ACC fasten.hpp)
+
+#register_model(acc ACC fasten.hpp)  # TODO
 # defining RAJA collides with the RAJA namespace so USE_RAJA
-#register_model(raja USE_RAJA fasten.hpp)
-#register_model(tbb TBB fasten.hpp)
+#register_model(raja USE_RAJA fasten.hpp) # TODO
+#register_model(tbb TBB fasten.hpp) # TODO
 #register_model(thrust THRUST fasten.hpp) # TODO
 
 set(USAGE ON CACHE BOOL "Whether to print all custom flags for the selected model")
@@ -281,29 +274,31 @@ registered_flags_action(check RESULT)
 message(STATUS "${RESULT}")
 
 list(APPEND IMPL_SOURCES
-        driver/main.c
-        driver/comms.c
-        driver/chunk.c
-        driver/shared.c
-        driver/diffuse.c
-        driver/profiler.c
-        driver/settings.c
-        driver/initialise.c
-        driver/parse_config.c
+        driver/main.cpp
+        driver/comms.cpp
+        driver/chunk.cpp
+        driver/shared.cpp
+        driver/diffuse.cpp
+        driver/profiler.cpp
+        driver/settings.cpp
+        driver/initialise.cpp
+        driver/parse_config.cpp
 
-        driver/cg_driver.c
-        driver/ppcg_driver.c
-        driver/cheby_driver.c
-        driver/jacobi_driver.c
-        driver/eigenvalue_driver.c
-        driver/halo_update_driver.c
-        driver/remote_halo_driver.c
-        driver/store_energy_driver.c
-        driver/field_summary_driver.c
-        driver/set_chunk_data_driver.c
-        driver/solve_finished_driver.c
-        driver/set_chunk_state_driver.c
-        driver/kernel_initialise_driver.c
+        driver/cg_driver.cpp
+        driver/ppcg_driver.cpp
+        driver/cheby_driver.cpp
+        driver/jacobi_driver.cpp
+        driver/eigenvalue_driver.cpp
+        driver/halo_update_driver.cpp
+        driver/remote_halo_driver.cpp
+        driver/store_energy_driver.cpp
+        driver/field_summary_driver.cpp
+        driver/set_chunk_data_driver.cpp
+        driver/solve_finished_driver.cpp
+        driver/set_chunk_state_driver.cpp
+        driver/kernel_initialise_driver.cpp
+
+        driver/mpi_shim.cpp
         #
         )
 
@@ -326,12 +321,6 @@ elseif ()
     set(ACTUAL_${BUILD_TYPE}_CXX_FLAGS ${${BUILD_TYPE}_CXX_FLAGS})
 endif ()
 
-if (NOT DEFINED ${BUILD_TYPE}_C_FLAGS)
-    set(ACTUAL_${BUILD_TYPE}_C_FLAGS ${DEFAULT_${BUILD_TYPE}_C_FLAGS})
-elseif ()
-    set(ACTUAL_${BUILD_TYPE}_C_FLAGS ${${BUILD_TYPE}_C_FLAGS})
-endif ()
-
 if (NOT ENABLE_MPI)
     list(APPEND IMPL_DEFINITIONS NO_MPI)
 else ()
@@ -343,7 +332,6 @@ if (ENABLE_PROFILING)
 endif ()
 
 message(STATUS "CXX vendor  : ${CMAKE_CXX_COMPILER_ID} (${CMAKE_CXX_COMPILER})")
-message(STATUS "CC   vendor  :${CMAKE_C_COMPILER_ID} (${CMAKE_C_COMPILER})")
 message(STATUS "Platform    : ${CMAKE_SYSTEM_PROCESSOR}")
 message(STATUS "Sources     : ${IMPL_SOURCES}")
 message(STATUS "Libraries   : ${LINK_LIBRARIES} ${CXX_EXTRA_LIBRARIES}")
@@ -357,15 +345,6 @@ message(STATUS "CXX Flags   : ${CMAKE_CXX_FLAGS_${BUILD_TYPE}} ${ACTUAL_${BUILD_
 message(STATUS "CXX Link Flags  : ${LINK_FLAGS} ${CXX_EXTRA_LINK_FLAGS}")
 message(STATUS "CXX Linker Flags: ${CMAKE_EXE_LINKER_FLAGS} ${CXX_EXTRA_LINKER_FLAGS} ")
 
-message(STATUS "C Flags   : ${CMAKE_C_FLAGS_${BUILD_TYPE}} ${ACTUAL_${BUILD_TYPE}_C_FLAGS} ${C_EXTRA_FLAGS}
-    C flags derived from (CMake + (Override ? Override : Default) + Extras), where:
-        CMake                    = `${CMAKE_C_FLAGS_${BUILD_TYPE}}`
-        Default                  = `${DEFAULT_${BUILD_TYPE}_C_FLAGS}`
-        Override (${BUILD_TYPE}_C_FLAGS) = `${${BUILD_TYPE}_C_FLAGS}`
-        Extras (C_EXTRA_FLAGS) = `${C_EXTRA_FLAGS}`")
-message(STATUS "C Link Flags  : ${LINK_FLAGS} ${C_EXTRA_LINK_FLAGS}")
-message(STATUS "C Linker Flags: ${CMAKE_EXE_LINKER_FLAGS} ${C_EXTRA_LINKER_FLAGS} ")
-
 message(STATUS "Defs        : ${IMPL_DEFINITIONS}")
 message(STATUS "Executable  : ${BIN_NAME}")
 
@@ -377,7 +356,7 @@ include_directories(${CMAKE_BINARY_DIR}/generated)
 
 add_executable(${EXE_NAME} ${IMPL_SOURCES})
 target_link_libraries(${EXE_NAME} PUBLIC ${LINK_LIBRARIES} m)
-target_compile_definitions(${EXE_NAME} PUBLIC ${IMPL_DEFINITIONS} _POSIX_C_SOURCE=200809L)
+target_compile_definitions(${EXE_NAME} PUBLIC ${IMPL_DEFINITIONS})
 target_include_directories(${EXE_NAME} PUBLIC driver)
 
 
@@ -385,22 +364,12 @@ if (CXX_EXTRA_LIBRARIES)
     target_link_libraries(${EXE_NAME} PUBLIC ${CXX_EXTRA_LIBRARIES})
 endif ()
 
-if (C_EXTRA_LIBRARIES)
-    target_link_libraries(${EXE_NAME} PUBLIC ${C_EXTRA_LIBRARIES})
-endif ()
-
-
 target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:Release>:${ACTUAL_RELEASE_CXX_FLAGS};${CXX_EXTRA_FLAGS}>>")
 target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:CXX>:$<$<CONFIG:Debug>:${ACTUAL_DEBUG_CXX_FLAGS};${CXX_EXTRA_FLAGS}>>")
 
 target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:C>:$<$<CONFIG:Release>:${ACTUAL_RELEASE_C_FLAGS};${C_EXTRA_FLAGS}>>")
-target_compile_options(${EXE_NAME} PUBLIC "$<$<COMPILE_LANGUAGE:C>:$<$<CONFIG:Debug>:${ACTUAL_DEBUG_C_FLAGS};${C_EXTRA_FLAGS}>>")
-
 target_link_options(${EXE_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:LINKER:${CXX_EXTRA_LINKER_FLAGS}>)
 target_link_options(${EXE_NAME} PUBLIC $<$<COMPILE_LANGUAGE:CXX>:${LINK_FLAGS};${CXX_EXTRA_LINK_FLAGS}>)
-
-target_link_options(${EXE_NAME} PUBLIC $<$<COMPILE_LANGUAGE:C>:LINKER:${C_EXTRA_LINKER_FLAGS}>)
-target_link_options(${EXE_NAME} PUBLIC $<$<COMPILE_LANGUAGE:C>:${LINK_FLAGS};${C_EXTRA_LINK_FLAGS}>)
 
 
 # some models require the target to be already specified so they can finish their setup here

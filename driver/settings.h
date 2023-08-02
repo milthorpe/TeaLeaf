@@ -1,8 +1,8 @@
 #pragma once
 
 #include "shared.h"
-#define __STDC_LIMIT_MACROS
-#include <stdint.h>
+#include <cstdint>
+#include <string>
 
 #define NUM_FIELDS 6
 
@@ -33,7 +33,8 @@
 #define DEF_CHECK_RESULT 1
 #define DEF_PPCG_INNER_STEPS 10
 #define DEF_PRECONDITIONER 0
-#define DEF_SOLVER CG_SOLVER
+#define DEF_SOLVER Solver::CG_SOLVER
+#define DEF_STAGING_BUFFER StagingBuffer::AUTO
 #define DEF_NUM_STATES 0
 #define DEF_NUM_CHUNKS 1
 #define DEF_NUM_CHUNKS_PER_RANK 1
@@ -43,17 +44,21 @@
 #define DEF_IS_OFFLOAD false
 
 // The type of solver to be run
-typedef enum { JACOBI_SOLVER, CG_SOLVER, CHEBY_SOLVER, PPCG_SOLVER } Solver;
+enum class Solver { JACOBI_SOLVER, CG_SOLVER, CHEBY_SOLVER, PPCG_SOLVER };
 
 // The language of the kernels to be run
-typedef enum { C, FORTRAN } Kernel_Language;
+enum class Kernel_Language { C, FORTRAN };
+
+enum class StagingBuffer { ENABLE, DISABLE, AUTO };
+
+enum class ModelKind { Host, Offload, Unified };
 
 // The main settings structure
-typedef struct Settings {
+struct Settings {
   // Set of system-wide profiles
-  struct Profile *kernel_profile;
-  struct Profile *application_profile;
-  struct Profile *wallclock_profile;
+  Profile *kernel_profile;
+  Profile *application_profile;
+  Profile *wallclock_profile;
 
   // Log files
   FILE *tea_out_fp;
@@ -94,6 +99,10 @@ typedef struct Settings {
 
   Kernel_Language kernel_language;
   char *device_selector;
+  std::string model_name;
+  ModelKind model_kind;
+  StagingBuffer staging_buffer_preference;
+  bool staging_buffer;
 
   // Field dimensions
   int grid_x_cells;
@@ -106,14 +115,13 @@ typedef struct Settings {
 
   double dx;
   double dy;
-
-} Settings;
+};
 
 // The accepted types of state geometry
-typedef enum { RECTANGULAR, CIRCULAR, POINT } Geometry;
+enum class Geometry { RECTANGULAR, CIRCULAR, POINT };
 
 // State list
-typedef struct {
+struct State {
   bool defined;
   double density;
   double energy;
@@ -123,8 +131,8 @@ typedef struct {
   double y_max;
   double radius;
   Geometry geometry;
-} State;
+};
 
-void set_default_settings(Settings *settings);
-void reset_fields_to_exchange(Settings *settings);
-bool is_fields_to_exchange(Settings *settings);
+void set_default_settings(Settings &settings);
+void reset_fields_to_exchange(Settings &settings);
+bool is_fields_to_exchange(Settings &settings);

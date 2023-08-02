@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "shared.h"
 #include "sycl_shared.hpp"
 
@@ -202,4 +203,44 @@ void cg_calc_p(const int x,          //
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
+}
+
+// CG solver kernels
+void run_cg_init(Chunk *chunk, Settings &settings, double rx, double ry, double *rro) {
+  START_PROFILING(settings.kernel_profile);
+
+  cg_init_u(chunk->x, chunk->y, settings.coefficient, *(chunk->p), *(chunk->r), *(chunk->u), *(chunk->w), *(chunk->density),
+            *(chunk->energy), *(chunk->ext->device_queue));
+
+  cg_init_k(chunk->x, chunk->y, settings.halo_depth, *(chunk->w), *(chunk->kx), *(chunk->ky), rx, ry, *(chunk->ext->device_queue));
+
+  cg_init_others(chunk->x, chunk->y, settings.halo_depth, *(chunk->kx), *(chunk->ky), *(chunk->p), *(chunk->r), *(chunk->u), *(chunk->w),
+                 rro, *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_cg_calc_w(Chunk *chunk, Settings &settings, double *pw) {
+  START_PROFILING(settings.kernel_profile);
+
+  cg_calc_w(chunk->x, chunk->y, settings.halo_depth, *(chunk->w), *(chunk->p), *(chunk->kx), *(chunk->ky), pw, *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_cg_calc_ur(Chunk *chunk, Settings &settings, double alpha, double *rrn) {
+  START_PROFILING(settings.kernel_profile);
+
+  cg_calc_ur(chunk->x, chunk->y, settings.halo_depth, *(chunk->u), *(chunk->r), *(chunk->p), *(chunk->w), alpha, rrn,
+             *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_cg_calc_p(Chunk *chunk, Settings &settings, double beta) {
+  START_PROFILING(settings.kernel_profile);
+
+  cg_calc_p(chunk->x, chunk->y, settings.halo_depth, beta, *(chunk->p), *(chunk->r), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }

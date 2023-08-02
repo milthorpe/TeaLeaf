@@ -1,20 +1,12 @@
 #pragma once
-// #include "sycl_shared.hpp"
 
-#ifdef SYCL_LANGUAGE_VERSION
-  #include <CL/sycl.hpp>
-using namespace cl::sycl;
+#include <CL/sycl.hpp>
 
-typedef buffer<double, 1> *FieldBufferType;
+using namespace cl;
 
-// Empty extension point
-typedef struct ChunkExtension {
-  FieldBufferType comms_buffer;
+using FieldBufferType = sycl::buffer<double, 1> *;
+using StagingBufferType = sycl::buffer<double, 1> *;
 
-} ChunkExtension;
-#else
-typedef struct ChunkExtension {
-  void *comms_buffer;
-} ChunkExtension;
-typedef void *FieldBufferType;
-#endif
+struct ChunkExtension {
+  sycl::queue *device_queue;
+};

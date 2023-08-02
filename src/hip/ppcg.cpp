@@ -1,5 +1,8 @@
 #include "hip/hip_runtime.h"
 
+#include "chunk.h"
+#include "cuknl_shared.h"
+
 __global__ void ppcg_init(const int x_inner, const int y_inner, const int halo_depth, const double theta, const double *r, double *sd) {
   const int gid = threadIdx.x + blockIdx.x * blockDim.x;
   if (gid >= x_inner * y_inner) return;
@@ -44,4 +47,18 @@ __global__ void ppcg_calc_sd(const int x_inner, const int y_inner, const int hal
   const int index = off0 + col + row * x;
 
   sd[index] = alpha * sd[index] + beta * r[index];
+}
+
+// PPCG solver kernels
+void run_ppcg_init(Chunk *chunk, Settings &settings) {
+  KERNELS_START(2 * settings.halo_depth);
+  ppcg_init<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->theta, chunk->r, chunk->sd);
+  KERNELS_END();
+}
+
+void run_ppcg_inner_iteration(Chunk *chunk, Settings &settings, double alpha, double beta) {
+  KERNELS_START(2 * settings.halo_depth);
+  ppcg_calc_ur<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->kx, chunk->ky, chunk->sd, chunk->u, chunk->r);
+  ppcg_calc_sd<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, alpha, beta, chunk->r, chunk->sd);
+  KERNELS_END();
 }

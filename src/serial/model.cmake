@@ -1,3 +1,3 @@
 macro(setup)
-    # Nothing special to do for serial
+    set(CMAKE_CXX_STANDARD 17)
 endmacro()

@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "shared.h"
 #include "sycl_shared.hpp"
 
@@ -65,4 +66,24 @@ void ppcg_calc_sd(const int x, const int y, const int halo_depth, const double t
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
+}
+
+// PPCG solver kernels
+void run_ppcg_init(Chunk *chunk, Settings &settings) {
+  START_PROFILING(settings.kernel_profile);
+
+  ppcg_init(chunk->x, chunk->y, settings.halo_depth, chunk->theta, *(chunk->sd), *(chunk->r), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_ppcg_inner_iteration(Chunk *chunk, Settings &settings, double alpha, double beta) {
+  START_PROFILING(settings.kernel_profile);
+
+  ppcg_calc_ur(chunk->x, chunk->y, settings.halo_depth, *(chunk->sd), *(chunk->r), *(chunk->u), *(chunk->kx), *(chunk->ky),
+               *(chunk->ext->device_queue));
+
+  ppcg_calc_sd(chunk->x, chunk->y, settings.halo_depth, chunk->theta, alpha, beta, *(chunk->sd), *(chunk->r), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }

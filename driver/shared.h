@@ -1,11 +1,10 @@
 #pragma once
 
 #include "profiler.h"
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdarg>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,15 +13,14 @@ extern "C" {
 struct Settings;
 
 // Shared function declarations
-void initialise_log(struct Settings *settings);
-void print_to_log(struct Settings *settings, const char *format, ...);
-void print_and_log(struct Settings *settings, const char *format, ...);
-void plot_2d(int x, int y, double *buffer, const char *name);
+void initialise_log(Settings &settings);
+void print_to_log(Settings &settings, const char *format, ...);
+void print_and_log(Settings &settings, const char *format, ...);
+void plot_2d(int x, int y, const double *buffer, const char *name);
 void die(int lineNum, const char *file, const char *format, ...);
 
 // Write out data for visualisation in visit
-void write_to_visit(const int nx, const int ny, const int x_off, const int y_off, const double *data, const char *name, const int step,
-                    const double time);
+void write_to_visit(int nx, int ny, int x_off, int y_off, const double *data, const char *name, int step, double time);
 
 #ifdef __cplusplus
 }
@@ -57,14 +55,13 @@ void write_to_visit(const int nx, const int ny, const int x_off, const int y_off
 #define tealeaf_sign(a, b) ((b) < 0 ? -fabs(a) : fabs(a))
 
 // Sparse Matrix Vector Product
-#define tealeaf_SMVP(a)                                                                                                                    \
-  (1.0 + (kx[index + 1] + kx[index]) + (ky[index + x] + ky[index])) * a[index] -                                                           \
-      (kx[index + 1] * a[index + 1] + kx[index] * a[index - 1]) - (ky[index + x] * a[index + x] + ky[index] * a[index - x]);
+#define tealeaf_SMVP(a)                                                          \
+  (1.0 + (kx[index + 1] + kx[index]) + (ky[index + x] + ky[index])) * a[index] - \
+      (kx[index + 1] * a[index + 1] + kx[index] * a[index - 1]) - (ky[index + x] * a[index + x] + ky[index] * a[index - x])
 
-#define GET_ARRAY_VALUE(len, buffer)                                                                                                       \
-  temp = 0.0;                                                                                                                              \
-  for (int ii = 0; ii < len; ++ii) {                                                                                                       \
-    temp += buffer[ii];                                                                                                                    \
-  }                                                                                                                                        \
+#define GET_ARRAY_VALUE(len, buffer) \
+  temp = 0.0;                        \
+  for (int ii = 0; ii < len; ++ii) { \
+    temp += buffer[ii];              \
+  }                                  \
   printf("%s = %.12E\n", #buffer, temp);
-

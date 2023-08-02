@@ -15,6 +15,14 @@ register_flag_optional(CUDA_EXTRA_FLAGS
         "")
 
 
+register_flag_optional(MANAGED_ALLOC "Use UVM (cudaMallocManaged) instead of the device-only allocation (cudaMalloc)"
+        "OFF")
+
+register_flag_optional(SYNC_ALL_KERNELS
+        "Fully synchronise all kernels after launch, this also enables synchronous error checking with line and file name"
+        "OFF")
+
+
 macro(setup)
 
     # XXX CMake 3.18 supports CMAKE_CUDA_ARCHITECTURES/CUDA_ARCHITECTURES but we support older CMakes
@@ -22,6 +30,7 @@ macro(setup)
         cmake_policy(SET CMP0104 OLD)
     endif ()
 
+    set(CMAKE_CXX_STANDARD 17)
     enable_language(CUDA)
 
     # add -forward-unknown-to-host-compiler for compatibility reasons
@@ -32,12 +41,22 @@ macro(setup)
     # appended later
     wipe_gcc_style_optimisation_flags(CMAKE_CUDA_FLAGS_${BUILD_TYPE})
 
-    # since we're doing a single-source w/ templated kernel build
-    # everything is a CUDA file
+    if (MANAGED_ALLOC)
+        register_definitions(CLOVER_MANAGED_ALLOC)
+    endif ()
 
-    #    set_source_files_properties(src/main.cpp PROPERTIES LANGUAGE CUDA)
-
+    if (SYNC_ALL_KERNELS)
+        register_definitions(CLOVER_SYNC_ALL_KERNELS)
+    endif ()
 
     message(STATUS "NVCC flags: ${CMAKE_CUDA_FLAGS} ${CMAKE_CUDA_FLAGS_${BUILD_TYPE}}")
 endmacro()
 
+
+macro(setup_target NAME)
+    # Treat everything as CUDA source
+    get_target_property(PROJECT_SRC "${NAME}" SOURCES)
+    foreach (SRC ${PROJECT_SRC})
+        set_source_files_properties("${SRC}" PROPERTIES LANGUAGE CUDA)
+    endforeach ()
+endmacro()

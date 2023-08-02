@@ -1,6 +1,7 @@
-#include "shared.h"
+#include "chunk.h"
 #include "dpl_shim.h"
 #include "ranged.h"
+#include "shared.h"
 #include "std_shared.h"
 /*
  *		CHEBYSHEV SOLVER KERNEL
@@ -11,7 +12,7 @@ void cheby_calc_u(const int x,          //
                   const int y,          //
                   const int halo_depth, //
                   double *u,            //
-                  double *p) {
+                  const double *p) {
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
@@ -26,12 +27,12 @@ void cheby_init(const int x,          //
                 const int halo_depth, //
                 const double theta,   //
                 double *u,            //
-                double *u0,           //
+                const double *u0,     //
                 double *p,            //
                 double *r,            //
                 double *w,            //
-                double *kx,           //
-                double *ky) {
+                const double *kx,     //
+                const double *ky) {
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
@@ -52,12 +53,12 @@ void cheby_iterate(const int x,          //
                    double alpha,         //
                    double beta,          //
                    double *u,            //
-                   double *u0,           //
+                   const double *u0,     //
                    double *p,            //
                    double *r,            //
                    double *w,            //
-                   double *kx,           //
-                   double *ky) {
+                   const double *kx,     //
+                   const double *ky) {
   Range2d range(halo_depth, halo_depth, x - halo_depth, y - halo_depth);
   ranged<int> it(0, range.sizeXY());
   std::for_each(EXEC_POLICY, it.begin(), it.end(), [=](int i) {
@@ -69,4 +70,19 @@ void cheby_iterate(const int x,          //
   });
 
   cheby_calc_u(x, y, halo_depth, u, p);
+}
+
+// Chebyshev solver kernels
+void run_cheby_init(Chunk *chunk, Settings &settings) {
+  START_PROFILING(settings.kernel_profile);
+  cheby_init(chunk->x, chunk->y, settings.halo_depth, chunk->theta, chunk->u, chunk->u0, chunk->p, chunk->r, chunk->w, chunk->kx,
+             chunk->ky);
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_cheby_iterate(Chunk *chunk, Settings &settings, double alpha, double beta) {
+  START_PROFILING(settings.kernel_profile);
+  cheby_iterate(chunk->x, chunk->y, settings.halo_depth, alpha, beta, chunk->u, chunk->u0, chunk->p, chunk->r, chunk->w, chunk->kx,
+                chunk->ky);
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }

@@ -4,7 +4,7 @@
   #include <mach/mach.h>
   #include <mach/mach_time.h>
 #else
-  #include <time.h>
+  #include <ctime>
 #endif
 
 /*
@@ -35,17 +35,17 @@ struct Profile {
 #endif
 
   int profiler_entry_count;
-  struct ProfileEntry profiler_entries[PROFILER_MAX_ENTRIES];
+  ProfileEntry profiler_entries[PROFILER_MAX_ENTRIES];
 };
 
-struct Profile *profiler_initialise();
-void profiler_finalise(struct Profile **profile);
+Profile *profiler_initialise();
+void profiler_finalise(Profile **profile);
 
-void profiler_start_timer(struct Profile *profile);
-void profiler_end_timer(struct Profile *profile, const char *entry_name);
-void profiler_print_simple_profile(struct Profile *profile);
-void profiler_print_full_profile(struct Profile *profile);
-int profiler_get_profile_entry(struct Profile *profile, const char *entry_name);
+void profiler_start_timer(Profile *profile);
+void profiler_end_timer(Profile *profile, const char *entry_name);
+void profiler_print_simple_profile(Profile *profile);
+void profiler_print_full_profile(Profile *profile);
+int profiler_get_profile_entry(Profile *profile, const char *entry_name);
 
 #ifdef __cplusplus
 }
@@ -62,8 +62,14 @@ int profiler_get_profile_entry(struct Profile *profile, const char *entry_name);
 
 #else
 
-  #define START_PROFILING(profile)
-  #define STOP_PROFILING(profile, name)
-  #define PRINT_PROFILING_RESULTS(profile)
+  #define START_PROFILING(profile) \
+    do {                           \
+    } while (false)
+  #define STOP_PROFILING(profile, name) \
+    do {                                \
+    } while (false)
+  #define PRINT_PROFILING_RESULTS(profile) \
+    do {                                   \
+    } while (false)
 
 #endif

@@ -1,6 +1,7 @@
-#include "c_kernels.h"
-#include "cuknl_shared.h"
 #include "hip/hip_runtime.h"
+
+#include "chunk.h"
+#include "cuknl_shared.h"
 
 __global__ void cg_init_u(const int x, const int y, const int coefficient, const double *density, const double *energy1, double *u,
                           double *p, double *r, double *w) {
@@ -106,4 +107,60 @@ __global__ void cg_calc_p(const int x_inner, const int y_inner, const int halo_d
   const int index = off0 + col + row * x;
 
   p[index] = r[index] + beta * p[index];
+}
+
+// CG solver kernels
+void run_cg_init(Chunk *chunk, Settings &settings, double rx, double ry, double *rro) {
+  START_PROFILING(settings.kernel_profile);
+
+  int num_blocks = ceil((double)(chunk->x * chunk->y) / (double)BLOCK_SIZE);
+  cg_init_u<<<num_blocks, BLOCK_SIZE>>>(chunk->x, chunk->y, settings.coefficient, chunk->density, chunk->energy, chunk->u, chunk->p,
+                                        chunk->r, chunk->w);
+
+  int x_inner = chunk->x - (2 * settings.halo_depth - 1);
+  int y_inner = chunk->y - (2 * settings.halo_depth - 1);
+  num_blocks = ceil((double)(x_inner * y_inner) / (double)BLOCK_SIZE);
+
+  cg_init_k<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->w, chunk->kx, chunk->ky, rx, ry);
+
+  x_inner = chunk->x - 2 * settings.halo_depth;
+  y_inner = chunk->y - 2 * settings.halo_depth;
+  num_blocks = ceil((double)(x_inner * y_inner) / (double)BLOCK_SIZE);
+
+  cg_init_others<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->u, chunk->kx, chunk->ky, chunk->p, chunk->r,
+                                             chunk->w, chunk->mi, chunk->ext->d_reduce_buffer);
+
+  sum_reduce_buffer(chunk->ext->d_reduce_buffer, rro, num_blocks);
+
+  KERNELS_END();
+}
+
+void run_cg_calc_w(Chunk *chunk, Settings &settings, double *pw) {
+  KERNELS_START(2 * settings.halo_depth);
+
+  cg_calc_w<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->kx, chunk->ky, chunk->p, chunk->w,
+                                        chunk->ext->d_reduce_buffer);
+
+  sum_reduce_buffer(chunk->ext->d_reduce_buffer, pw, num_blocks);
+
+  KERNELS_END();
+}
+
+void run_cg_calc_ur(Chunk *chunk, Settings &settings, double alpha, double *rrn) {
+  KERNELS_START(2 * settings.halo_depth);
+
+  cg_calc_ur<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, alpha, chunk->p, chunk->w, chunk->u, chunk->r,
+                                         chunk->ext->d_reduce_buffer);
+
+  sum_reduce_buffer(chunk->ext->d_reduce_buffer, rrn, num_blocks);
+
+  KERNELS_END();
+}
+
+void run_cg_calc_p(Chunk *chunk, Settings &settings, double beta) {
+  KERNELS_START(2 * settings.halo_depth);
+
+  cg_calc_p<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, beta, chunk->r, chunk->p);
+
+  KERNELS_END();
 }

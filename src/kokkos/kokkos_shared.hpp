@@ -1,33 +1,3 @@
 #pragma once
-
 #include <Kokkos_Core.hpp>
-
-typedef Kokkos::View<double *> KView;
-
-class KokkosHelper {
-public:
-  // Used to manage copying the raw pointers
-  template <class Type> static void PackMirror(const Kokkos::View<Type *, Kokkos::HostSpace> &mirror, const Type *buffer, int len) {
-    for (int kk = 0; kk != len; ++kk) {
-      mirror(kk) = buffer[kk];
-    }
-  }
-
-  template <class Type> static void UnpackMirror(Type *buffer, const Kokkos::View<Type *, Kokkos::HostSpace> &mirror, int len) {
-    for (int kk = 0; kk != len; ++kk) {
-      buffer[kk] = mirror(kk);
-    }
-  }
-
-  static void GetKokkosArrayVal(int len, KView device_buffer, const char *name) {
-    typename Kokkos::View<double *>::HostMirror host_buffer = create_mirror_view(device_buffer);
-    Kokkos::deep_copy(host_buffer, device_buffer);
-
-    double temp = 0.0;
-    for (int ii = 0; ii < len; ++ii) {
-      temp += host_buffer[ii];
-    }
-
-    printf("%s : %.12e\n", name, temp);
-  }
-};
+using KView = Kokkos::View<double *>;

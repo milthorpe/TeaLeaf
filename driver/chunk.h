@@ -2,10 +2,10 @@
 
 #include "chunk_extension.h"
 #include "settings.h"
-#include <math.h>
+#include <cmath>
 
 // The core Tealeaf interface class.
-typedef struct Chunk {
+struct Chunk {
   // Solve-wide variables
   double dt_init;
 
@@ -13,14 +13,23 @@ typedef struct Chunk {
   int *neighbours;
 
   // MPI comm buffers
-  double *left_send;
-  double *left_recv;
-  double *right_send;
-  double *right_recv;
-  double *top_send;
-  double *top_recv;
-  double *bottom_send;
-  double *bottom_recv;
+  FieldBufferType left_send;
+  FieldBufferType left_recv;
+  FieldBufferType right_send;
+  FieldBufferType right_recv;
+  FieldBufferType top_send;
+  FieldBufferType top_recv;
+  FieldBufferType bottom_send;
+  FieldBufferType bottom_recv;
+
+  StagingBufferType staging_left_send;
+  StagingBufferType staging_left_recv;
+  StagingBufferType staging_right_send;
+  StagingBufferType staging_right_recv;
+  StagingBufferType staging_top_send;
+  StagingBufferType staging_top_recv;
+  StagingBufferType staging_bottom_send;
+  StagingBufferType staging_bottom_recv;
 
   // Mesh chunks
   int left;
@@ -72,11 +81,11 @@ typedef struct Chunk {
   double *cheby_alphas;
   double *cheby_betas;
 
-  struct ChunkExtension *ext;
-} Chunk;
+  ChunkExtension *ext;
+};
 
 struct Settings;
 
-void dump_chunk(const char *prefix, const char *suffix, Chunk *chunk, Settings *settings);
-void initialise_chunk(Chunk *chunk, struct Settings *settings, int x, int y);
+void dump_chunk(const char *prefix, const char *suffix, Chunk *chunk, Settings &settings);
+void initialise_chunk(Chunk *chunk, Settings &settings, int x, int y);
 void finalise_chunk(Chunk *chunk);

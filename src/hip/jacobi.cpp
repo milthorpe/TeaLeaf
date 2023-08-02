@@ -1,6 +1,8 @@
-#include "shared.h"
-#include "cuknl_shared.h"
 #include "hip/hip_runtime.h"
+
+#include "chunk.h"
+#include "cuknl_shared.h"
+#include "shared.h"
 
 // Core computation for Jacobi solver.
 __global__ void jacobi_iterate(const int x_inner, const int y_inner, const int halo_depth, const double *kx, const double *ky,
@@ -68,4 +70,20 @@ __global__ void jacobi_copy_u(const int x_inner, const int y_inner, const double
   if (gid < x_inner * y_inner) {
     dest[gid] = src[gid];
   }
+}
+
+// Jacobi solver kernels
+void run_jacobi_init(Chunk *chunk, Settings &settings, double rx, double ry) {
+  KERNELS_START(2 * settings.halo_depth);
+  jacobi_init<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->density, chunk->energy, rx, ry, chunk->kx,
+                                          chunk->ky, chunk->u0, chunk->u, settings.coefficient);
+  KERNELS_END();
+}
+
+void run_jacobi_iterate(Chunk *chunk, Settings &settings, double *error) {
+  KERNELS_START(2 * settings.halo_depth);
+  jacobi_iterate<<<num_blocks, BLOCK_SIZE>>>(x_inner, y_inner, settings.halo_depth, chunk->kx, chunk->ky, chunk->u0, chunk->r, chunk->u,
+                                             chunk->ext->d_reduce_buffer);
+  sum_reduce_buffer(chunk->ext->d_reduce_buffer, error, num_blocks);
+  KERNELS_END();
 }

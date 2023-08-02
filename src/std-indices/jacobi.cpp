@@ -1,6 +1,7 @@
-#include "shared.h"
+#include "chunk.h"
 #include "dpl_shim.h"
 #include "ranged.h"
+#include "shared.h"
 #include "std_shared.h"
 #include <cmath>
 
@@ -15,8 +16,8 @@ void jacobi_init(const int x,           //
                  const int coefficient, //
                  double rx,             //
                  double ry,             //
-                 double *density,       //
-                 double *energy,        //
+                 const double *density, //
+                 const double *energy,  //
                  double *u0,            //
                  double *u,             //
                  double *kx,            //
@@ -49,9 +50,9 @@ void jacobi_iterate(const int x,          //
                     const int y,          //
                     const int halo_depth, //
                     double *error,        //
-                    double *kx,           //
-                    double *ky,           //
-                    double *u0,           //
+                    const double *kx,     //
+                    const double *ky,     //
+                    const double *u0,     //
                     double *u,            //
                     double *r) {
 
@@ -76,4 +77,18 @@ void jacobi_iterate(const int x,          //
       return fabs(u[index] - r[index]);
     });
   }
+}
+
+// Jacobi solver kernels
+void run_jacobi_init(Chunk *chunk, Settings &settings, double rx, double ry) {
+  START_PROFILING(settings.kernel_profile);
+  jacobi_init(chunk->x, chunk->y, settings.halo_depth, settings.coefficient, rx, ry, chunk->density, chunk->energy, chunk->u0, chunk->u,
+              chunk->kx, chunk->ky);
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_jacobi_iterate(Chunk *chunk, Settings &settings, double *error) {
+  START_PROFILING(settings.kernel_profile);
+  jacobi_iterate(chunk->x, chunk->y, settings.halo_depth, error, chunk->kx, chunk->ky, chunk->u0, chunk->u, chunk->r);
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }

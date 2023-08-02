@@ -1,7 +1,5 @@
 #pragma once
 
-typedef double *FieldBufferType;
-
-// Empty extension point
-typedef struct ChunkExtension {
-} ChunkExtension;
+using FieldBufferType = double *;
+using StagingBufferType = double *;
+struct ChunkExtension {};

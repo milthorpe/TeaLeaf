@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "shared.h"
 #include "sycl_shared.hpp"
 
@@ -88,4 +89,25 @@ void cheby_iterate(const int x,          //
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
+}
+
+// Chebyshev solver kernels
+void run_cheby_init(Chunk *chunk, Settings &settings) {
+  START_PROFILING(settings.kernel_profile);
+
+  cheby_init(chunk->x, chunk->y, settings.halo_depth, chunk->theta, (chunk->p), (chunk->r), (chunk->u), (chunk->u0), (chunk->w),
+             (chunk->kx), (chunk->ky), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_cheby_iterate(Chunk *chunk, Settings &settings, double alpha, double beta) {
+  START_PROFILING(settings.kernel_profile);
+
+  cheby_iterate(chunk->x, chunk->y, settings.halo_depth, alpha, beta, (chunk->p), (chunk->r), (chunk->u), (chunk->u0), (chunk->w),
+                (chunk->kx), (chunk->ky), *(chunk->ext->device_queue));
+
+  cheby_calc_u(chunk->x, chunk->y, settings.halo_depth, (chunk->p), (chunk->u), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }

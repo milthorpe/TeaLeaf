@@ -1,3 +1,4 @@
+#include "chunk.h"
 #include "shared.h"
 #include "sycl_shared.hpp"
 
@@ -82,4 +83,25 @@ void jacobi_copy_u(const int x,   //
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
+}
+
+// Jacobi solver kernels
+void run_jacobi_init(Chunk *chunk, Settings &settings, double rx, double ry) {
+  START_PROFILING(settings.kernel_profile);
+
+  jacobi_init(chunk->x, chunk->y, settings.halo_depth, settings.coefficient, rx, ry, (chunk->u), (chunk->u0), (chunk->density),
+              (chunk->energy), (chunk->kx), (chunk->ky), *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
+}
+
+void run_jacobi_iterate(Chunk *chunk, Settings &settings, double *error) {
+  START_PROFILING(settings.kernel_profile);
+
+  jacobi_copy_u(chunk->x, chunk->y, (chunk->r), (chunk->u), *(chunk->ext->device_queue));
+
+  jacobi_iterate(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->u0), (chunk->r), (chunk->kx), (chunk->ky), error,
+                 *(chunk->ext->device_queue));
+
+  STOP_PROFILING(settings.kernel_profile, __func__);
 }
