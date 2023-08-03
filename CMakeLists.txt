@@ -214,8 +214,9 @@ include(cmake/register_models.cmake)
 register_flag_optional(ENABLE_MPI "Enables MPI support at compile time, set MPI_HOME (e.g -DMPI_HOME=/usr/lib64/openmpi/) if not on PATH" OFF)
 register_flag_optional(ENABLE_PROFILING "Enables kernel profiler, this may introduce synchronisation overhead for some models." OFF)
 
-if ("${MODEL}" STREQUAL omp-target)
+if ("${MODEL}" STREQUAL "omp-target")
     set(MODEL omp)
+    set(ALTERNATIVE_BIN_NAME "omp-target-tealeaf")
 endif ()
 
 set(MODEL_SRC
@@ -304,6 +305,10 @@ list(APPEND IMPL_SOURCES
 
 # run model specific setup, i.e append build flags, etc
 setup()
+
+if (ALTERNATIVE_BIN_NAME)
+    set(BIN_NAME "${ALTERNATIVE_BIN_NAME}")
+endif ()
 
 # CMake insists that -O2 (or equivalent) is the universally accepted optimisation level
 # we remove that here and use our own <BUILD_TYPE>_FLAGS
