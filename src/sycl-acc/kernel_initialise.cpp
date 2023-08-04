@@ -118,10 +118,10 @@ void set_chunk_data_vertices(const int x,              //
     auto vertex_y = vertex_yBuff.get_access<access::mode::discard_write>(h);
     h.parallel_for<class set_chunk_data_vertices>(range<1>(tealeaf_MAX(x, y) + 1), [=](id<1> idx) {
       if (idx[0] < x + 1) {
-        vertex_x[idx[0]] = x_min + dx * double(idx[0] - halo_depth);
+        vertex_x[idx[0]] = x_min + dx * static_cast<double>(static_cast<int>(idx[0]) - halo_depth);
       }
       if (idx[0] < y + 1) {
-        vertex_y[idx[0]] = y_min + dy * double(idx[0] - halo_depth);
+        vertex_y[idx[0]] = y_min + dy * static_cast<double>(static_cast<int>(idx[0]) - halo_depth);
       }
     });
   });
