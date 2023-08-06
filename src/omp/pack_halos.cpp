@@ -183,9 +183,12 @@ void run_send_recv_halo(Chunk *chunk, Settings &settings,                       
                         int send_tag, int recv_tag,                                       //
                         MPI_Request *send_request, MPI_Request *recv_request) {
   START_PROFILING(settings.kernel_profile);
+  // We can't inline this boolean expression thanks to a bug AOMP:
+  // https://github.com/ROCm-Developer-Tools/aomp/issues/601
+  bool stage = settings.staging_buffer && settings.is_offload;
 #ifdef OMP_TARGET
-  #pragma omp target update if (settings.staging_buffer && settings.is_offload) from(src_send_buffer[ : buffer_len])
-  #pragma omp target data if (!settings.staging_buffer && settings.is_offload) use_device_ptr(src_send_buffer, src_recv_buffer)
+  #pragma omp target update if (stage) from(src_send_buffer[ : buffer_len])
+  #pragma omp target data if (!stage) use_device_ptr(src_send_buffer, src_recv_buffer)
   { send_recv_message(settings, src_send_buffer, src_recv_buffer, buffer_len, neighbour, send_tag, recv_tag, send_request, recv_request); }
 #else
   send_recv_message(settings, src_send_buffer, src_recv_buffer, buffer_len, neighbour, send_tag, recv_tag, send_request, recv_request);
