@@ -4,7 +4,7 @@
 
 #include "shared.h"
 #ifndef BLOCK_SIZE
-  #define BLOCK_SIZE 256
+  #define BLOCK_SIZE 1024 // XXX anything less than 512 would break reduction
 #endif
 
 #ifdef CLOVER_MANAGED_ALLOC
