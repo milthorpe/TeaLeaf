@@ -20,11 +20,7 @@ __device__ inline double SUM(double a, double b) { return a + b; }
 template <typename T, int offset> class reduce {
 public:
   __device__ inline static void run(T *array, T *out, T (*func)(T, T)) {
-    // only need to sync if not working within a warp
-    if (offset > 16) {
-      __syncthreads();
-    }
-
+    __syncthreads(); // don't optimise for sub-warp, always sync
     // only continue if it's in the lower half
     if (threadIdx.x < offset) {
       array[threadIdx.x] = func(array[threadIdx.x], array[threadIdx.x + offset]);
