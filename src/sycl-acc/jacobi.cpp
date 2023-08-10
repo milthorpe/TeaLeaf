@@ -66,9 +66,9 @@ void jacobi_iterate(const int x,          //
     auto kx = kxBuff.get_access<access::mode::read>(h);
     auto ky = kyBuff.get_access<access::mode::read>(h);
 
-    h.parallel_for<class jacobi_iterate>(
-        range<1>(x * y),                                                                                         //
-        sycl::reduction(error_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+    h.parallel_for<class jacobi_iterate>(                        //
+        range<1>(x * y),                                         //
+        reduction_shim(error_temp, h, {}, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;

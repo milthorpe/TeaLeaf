@@ -28,6 +28,9 @@ void cg_init_u(const int x,           //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 // Initialises kx,ky
@@ -51,6 +54,9 @@ void cg_init_k(const int x,          //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 // Initialises w,r,p and calculates rro
@@ -63,31 +69,30 @@ void cg_init_others(const int x,          //
                     SyclBuffer &r,        //
                     SyclBuffer &u,        //
                     SyclBuffer &w,        //
+                    SyclBuffer &rro_temp, //
                     double *rro,          //
                     queue &device_queue) {
-
-  buffer<double, 1> rro_temp{range<1>{1}};
-
-  device_queue
-      .submit([&](handler &h) {
-        h.parallel_for<class cg_init_others>(
-            range<1>(x * y),                                                                                       //
-            sycl::reduction(rro_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
-            [=](item<1> item, auto &acc) {
-              const auto kk = item[0] % x;
-              const auto jj = item[0] / x;
-              if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
-                auto index = item[0]; // smvp uses kx and ky and index
-                const double smvp = tealeaf_SMVP(u);
-                w[item[0]] = smvp;
-                r[item[0]] = u[item[0]] - w[item[0]];
-                p[item[0]] = r[item[0]];
-                acc += r[item[0]] * p[item[0]];
-              }
-            });
-      })
-      .wait_and_throw();
-  *rro += rro_temp.get_host_access()[0];
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class cg_init_others>(                     //
+        range<1>(x * y),                                      //
+        reduction_shim(rro_temp, *rro, sycl::plus<double>()), //
+        [=](item<1> item, auto &acc) {
+          const auto kk = item[0] % x;
+          const auto jj = item[0] / x;
+          if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
+            auto index = item[0]; // smvp uses kx and ky and index
+            const double smvp = tealeaf_SMVP(u);
+            w[item[0]] = smvp;
+            r[item[0]] = u[item[0]] - w[item[0]];
+            p[item[0]] = r[item[0]];
+            acc += r[item[0]] * p[item[0]];
+          }
+        });
+  });
+  device_queue.copy(rro_temp, rro, 1, event).wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 // Calculates the value for w
@@ -98,28 +103,29 @@ void cg_calc_w(const int x,          //
                SyclBuffer &p,        //
                SyclBuffer &kx,       //
                SyclBuffer &ky,       //
+               SyclBuffer &pw_temp,  //
                double *pw,           //
                queue &device_queue) {
-  buffer<double, 1> pw_temp{range<1>{1}};
-  device_queue.submit([&](handler &h) {
-    h.parallel_for<class cg_calc_w>(range<1>(x * y),                                                                                      //
-                                    sycl::reduction(pw_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
-                                    [=](item<1> item, auto &acc) {
-                                      const auto kk = item[0] % x;
-                                      const auto jj = item[0] / x;
-                                      if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
-                                        // smvp uses kx and ky and index
-                                        int index = item[0];
-                                        const double smvp = tealeaf_SMVP(p);
-                                        w[item[0]] = smvp;
-                                        acc += w[item[0]] * p[item[0]];
-                                      }
-                                    });
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class cg_calc_w>(                        //
+        range<1>(x * y),                                    //
+        reduction_shim(pw_temp, *pw, sycl::plus<double>()), //
+        [=](item<1> item, auto &acc) {
+          const auto kk = item[0] % x;
+          const auto jj = item[0] / x;
+          if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
+            // smvp uses kx and ky and index
+            int index = item[0];
+            const double smvp = tealeaf_SMVP(p);
+            w[item[0]] = smvp;
+            acc += w[item[0]] * p[item[0]];
+          }
+        });
   });
+  device_queue.copy(pw_temp, pw, 1, event).wait_and_throw();
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
-  *pw += pw_temp.get_host_access()[0];
 }
 
 // Calculates the value of u and r
@@ -130,15 +136,14 @@ void cg_calc_ur(const int x,          //
                 SyclBuffer &r,        //
                 SyclBuffer &p,        //
                 SyclBuffer &w,        //
+                SyclBuffer &rrn_temp, //
                 const double alpha,   //
                 double *rrn,          //
                 queue &device_queue) {
-
-  buffer<double, 1> rrn_temp{range<1>{1}};
-  device_queue.submit([&](handler &h) {
-    h.parallel_for<class cg_calc_ur>(
-        range<1>(x * y),                                                                                       //
-        sycl::reduction(rrn_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class cg_calc_ur>(                         //
+        range<1>(x * y),                                      //
+        reduction_shim(rrn_temp, *rrn, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;
@@ -149,10 +154,10 @@ void cg_calc_ur(const int x,          //
           }
         });
   });
+  device_queue.copy(rrn_temp, rrn, 1, event).wait_and_throw();
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
-  *rrn += rrn_temp.get_host_access()[0];
 }
 
 // Calculates a value for p
@@ -171,7 +176,8 @@ void cg_calc_p(const int x,          //
         p[idx[0]] = beta * p[idx[0]] + r[idx[0]];
       }
     });
-  });
+      })
+      .wait_and_throw(); // this is followed by local_halo, so we must synchronise here
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
@@ -186,8 +192,8 @@ void run_cg_init(Chunk *chunk, Settings &settings, double rx, double ry, double 
 
   cg_init_k(chunk->x, chunk->y, settings.halo_depth, (chunk->w), (chunk->kx), (chunk->ky), rx, ry, *(chunk->ext->device_queue));
 
-  cg_init_others(chunk->x, chunk->y, settings.halo_depth, (chunk->kx), (chunk->ky), (chunk->p), (chunk->r), (chunk->u), (chunk->w), rro,
-                 *(chunk->ext->device_queue));
+  cg_init_others(chunk->x, chunk->y, settings.halo_depth, (chunk->kx), (chunk->ky), (chunk->p), (chunk->r), (chunk->u), (chunk->w),
+                 (chunk->ext->reduction_cg_rro), rro, *(chunk->ext->device_queue));
 
   STOP_PROFILING(settings.kernel_profile, __func__);
 }
@@ -195,14 +201,15 @@ void run_cg_init(Chunk *chunk, Settings &settings, double rx, double ry, double 
 void run_cg_calc_w(Chunk *chunk, Settings &settings, double *pw) {
   START_PROFILING(settings.kernel_profile);
 
-  cg_calc_w(chunk->x, chunk->y, settings.halo_depth, (chunk->w), (chunk->p), (chunk->kx), (chunk->ky), pw, *(chunk->ext->device_queue));
+  cg_calc_w(chunk->x, chunk->y, settings.halo_depth, (chunk->w), (chunk->p), (chunk->kx), (chunk->ky), (chunk->ext->reduction_cg_pw), pw,
+            *(chunk->ext->device_queue));
   STOP_PROFILING(settings.kernel_profile, __func__);
 }
 
 void run_cg_calc_ur(Chunk *chunk, Settings &settings, double alpha, double *rrn) {
   START_PROFILING(settings.kernel_profile);
-  cg_calc_ur(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->r), (chunk->p), (chunk->w), alpha, rrn,
-             *(chunk->ext->device_queue));
+  cg_calc_ur(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->r), (chunk->p), (chunk->w), (chunk->ext->reduction_cg_rrn), alpha,
+             rrn, *(chunk->ext->device_queue));
   STOP_PROFILING(settings.kernel_profile, __func__);
 }
 

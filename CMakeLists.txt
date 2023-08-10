@@ -29,7 +29,13 @@ if (NOT MODEL)
     #    set(CUDA_ARCH sm_60)
 
 #    set(MODEL std-indices)
-    set(MODEL std-indices)
+
+    set(MODEL sycl-usm)
+    set(SYCL_COMPILER ONEAPI-ICPX)
+
+    set(ENV{HIPSYCL_TARGETS} omp.accelerated)
+    set(SYCL_COMPILER HIPSYCL)
+    set(SYCL_COMPILER_DIR /opt/hipsycl/485ea80/)
 #        set(KOKKOS_IN_TREE /home/tom/Downloads/kokkos-4.0.01/)
 #        set(Kokkos_ENABLE_OPENMP ON)
 
@@ -95,8 +101,8 @@ endif ()
 ## Flags for debugging only, enable for development (ASan only works on few models)
 set(SANITIZE OFF)
 if (SANITIZE)
-    set(CXX_EXTRA_FLAGS -fsanitize=address -fsanitize=undefined)
-    set(CXX_EXTRA_LINK_FLAGS -fsanitize=address -fsanitize=undefined)
+    set(CXX_EXTRA_FLAGS -fsanitize=address -fsanitize=undefined -g )
+    set(CXX_EXTRA_LINK_FLAGS -fsanitize=address -fsanitize=undefined -g)
 endif ()
 
 

@@ -39,8 +39,10 @@ void set_chunk_initial_state(const int x,            //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
-
 
 // Initialises the vertices
 void set_chunk_data_vertices(const int x,          //
@@ -65,6 +67,9 @@ void set_chunk_data_vertices(const int x,          //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 // Sets all of the cell data for a chunk
@@ -101,8 +106,10 @@ void set_chunk_data(const int x,          //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
-
 
 // Sets all of the additional states in order
 void set_chunk_state(const int x,          //
@@ -151,6 +158,9 @@ void set_chunk_state(const int x,          //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 void run_set_chunk_data(Chunk *chunk, Settings &settings) {
@@ -254,17 +264,24 @@ void run_kernel_initialise(Chunk *chunk, Settings &settings, int comms_lr_len, i
   chunk->bottom_send = sycl::malloc_shared<double>(comms_tb_len, *chunk->ext->device_queue);
   chunk->bottom_recv = sycl::malloc_shared<double>(comms_tb_len, *chunk->ext->device_queue);
 
+  chunk->ext->reduction_cg_rro = sycl::malloc_shared<double>(1, *chunk->ext->device_queue);
+  chunk->ext->reduction_cg_pw = sycl::malloc_shared<double>(1, *chunk->ext->device_queue);
+  chunk->ext->reduction_cg_rrn = sycl::malloc_shared<double>(1, *chunk->ext->device_queue);
+  chunk->ext->reduction_jacobi_error = sycl::malloc_shared<double>(1, *chunk->ext->device_queue);
+  chunk->ext->reduction_norm = sycl::malloc_shared<double>(1, *chunk->ext->device_queue);
+  chunk->ext->reduction_field_summary = sycl::malloc_shared<Summary>(1, *chunk->ext->device_queue);
+
   allocate_buffer(&(chunk->cg_alphas), settings.max_iters, 1);
   allocate_buffer(&(chunk->cg_betas), settings.max_iters, 1);
   allocate_buffer(&(chunk->cheby_alphas), settings.max_iters, 1);
   allocate_buffer(&(chunk->cheby_betas), settings.max_iters, 1);
 }
 
-void run_kernel_finalise(Chunk *chunk, Settings &settings) {
-  delete ((chunk->cg_alphas));
-  delete ((chunk->cg_betas));
-  delete ((chunk->cheby_alphas));
-  delete ((chunk->cheby_betas));
+void run_kernel_finalise(Chunk *chunk, Settings &) {
+  delete[] chunk->cg_alphas;
+  delete[] chunk->cg_betas;
+  delete[] chunk->cheby_alphas;
+  delete[] chunk->cheby_betas;
 
   sycl::free(chunk->density0, *chunk->ext->device_queue);
   sycl::free(chunk->density, *chunk->ext->device_queue);
@@ -299,6 +316,13 @@ void run_kernel_finalise(Chunk *chunk, Settings &settings) {
   sycl::free(chunk->top_recv, *chunk->ext->device_queue);
   sycl::free(chunk->bottom_send, *chunk->ext->device_queue);
   sycl::free(chunk->bottom_recv, *chunk->ext->device_queue);
+
+  sycl::free(chunk->ext->reduction_cg_rro, *chunk->ext->device_queue);
+  sycl::free(chunk->ext->reduction_cg_pw, *chunk->ext->device_queue);
+  sycl::free(chunk->ext->reduction_cg_rrn, *chunk->ext->device_queue);
+  sycl::free(chunk->ext->reduction_jacobi_error, *chunk->ext->device_queue);
+  sycl::free(chunk->ext->reduction_norm, *chunk->ext->device_queue);
+  sycl::free(chunk->ext->reduction_field_summary, *chunk->ext->device_queue);
 
   delete chunk->ext->device_queue;
 }

@@ -4,33 +4,23 @@
 
 using namespace cl::sycl;
 
-struct Summary {
-  double vol;
-  double mass;
-  double ie;
-  double temp;
-  [[nodiscard]] constexpr Summary operator+(const Summary &that) const { //
-    return {vol + that.vol, mass + that.mass, ie + that.ie, temp + that.temp};
-  }
-};
-
-void field_summary_func(const int x,          //
-                        const int y,          //
-                        const int halo_depth, //
-                        SyclBuffer &u,        //
-                        SyclBuffer &density,  //
-                        SyclBuffer &energy0,  //
-                        SyclBuffer &volume,   //
-                        double *vol,          //
-                        double *mass,         //
-                        double *ie,           //
-                        double *temp,         //
+void field_summary_func(const int x,            //
+                        const int y,            //
+                        const int halo_depth,   //
+                        SyclBuffer &u,          //
+                        SyclBuffer &density,    //
+                        SyclBuffer &energy0,    //
+                        SyclBuffer &volume,     //
+                        Summary *&summary_temp, //
+                        double *vol,            //
+                        double *mass,           //
+                        double *ie,             //
+                        double *temp,           //
                         queue &device_queue) {
-  buffer<Summary, 1> summary_temp{range<1>{1}};
-  device_queue.submit([&](handler &h) {
-    h.parallel_for<class field_summary_func>(
-        range<1>(x * y),                                                                                           //
-        sycl::reduction(summary_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class field_summary_func>(                    //
+        range<1>(x * y),                                         //
+        reduction_shim(summary_temp, {}, sycl::plus<Summary>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;
@@ -46,8 +36,8 @@ void field_summary_func(const int x,          //
           }
         });
   });
-  device_queue.wait_and_throw();
-  auto s = summary_temp.get_host_access()[0];
+  Summary s{};
+  device_queue.copy(summary_temp, &s, 1, event).wait_and_throw();
   *vol = s.vol;
   *mass = s.mass;
   *ie = s.ie;
@@ -113,27 +103,26 @@ void calculate_residual(const int x,          //
 }
 
 // Calculates the 2 norm of the provided buffer.
-void calculate_2norm(const int x,          //
-                     const int y,          //
-                     const int halo_depth, //
-                     SyclBuffer &b,        //
-                     double *norm,         //
+void calculate_2norm(const int x,           //
+                     const int y,           //
+                     const int halo_depth,  //
+                     SyclBuffer &b,         //
+                     SyclBuffer &norm_temp, //
+                     double *norm,          //
                      queue &device_queue) {
-  buffer<double, 1> norm_temp{range<1>{1}};
-  device_queue
-      .submit([&](handler &h) {
-        h.parallel_for<class calculate_2norm>(
-            range<1>(x * y), sycl::reduction(norm_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
-            [=](item<1> item, auto &acc) {
-              const auto kk = item[0] % x;
-              const auto jj = item[0] / x;
-              if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
-                acc += b[item[0]] * b[item[0]];
-              }
-            });
-      })
-      .wait_and_throw();
-  *norm = norm_temp.get_host_access()[0];
+
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class calculate_2norm>(                                       //
+        range<1>(x * y), reduction_shim(norm_temp, *norm, sycl::plus<double>()), //
+        [=](item<1> item, auto &acc) {
+          const auto kk = item[0] % x;
+          const auto jj = item[0] / x;
+          if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
+            acc += b[item[0]] * b[item[0]];
+          }
+        });
+  });
+  device_queue.copy(norm_temp, norm, 1, event).wait_and_throw();
 }
 
 // Finalises the energy field.
@@ -167,8 +156,8 @@ void run_store_energy(Chunk *chunk, Settings &settings) {
 
 void run_field_summary(Chunk *chunk, Settings &settings, double *vol, double *mass, double *ie, double *temp) {
   START_PROFILING(settings.kernel_profile);
-  field_summary_func(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->density), (chunk->energy0), (chunk->volume), vol, mass,
-                     ie, temp, *(chunk->ext->device_queue));
+  field_summary_func(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->density), (chunk->energy0), (chunk->volume),
+                     (chunk->ext->reduction_field_summary), vol, mass, ie, temp, *(chunk->ext->device_queue));
 
   STOP_PROFILING(settings.kernel_profile, __func__);
 }
@@ -190,7 +179,7 @@ void run_calculate_residual(Chunk *chunk, Settings &settings) {
 
 void run_calculate_2norm(Chunk *chunk, Settings &settings, SyclBuffer buffer, double *norm) {
   START_PROFILING(settings.kernel_profile);
-  calculate_2norm(chunk->x, chunk->y, settings.halo_depth, (buffer), norm, *(chunk->ext->device_queue));
+  calculate_2norm(chunk->x, chunk->y, settings.halo_depth, (buffer), chunk->ext->reduction_norm, norm, *(chunk->ext->device_queue));
 
   STOP_PROFILING(settings.kernel_profile, __func__);
 }

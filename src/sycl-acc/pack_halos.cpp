@@ -206,23 +206,26 @@ void run_pack_or_unpack(Chunk *chunk, Settings &settings, int depth, int face, b
   STOP_PROFILING(settings.kernel_profile, __func__);
 }
 
+#if !(defined(__HIPSYCL__) || defined(__OPENSYCL__))
+
 template <typename A> decltype(auto) get_native_ptr_or_throw(sycl::interop_handle &ih, A accessor) {
   using sycl::backend;
   using T = std::remove_cv_t<typename decltype(accessor)::value_type>;
   switch (ih.get_backend()) {
     case backend::ext_oneapi_level_zero: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_level_zero>(accessor));
-#ifdef SYCL_EXT_ONEAPI_BACKEND_cuda
+  #ifdef SYCL_EXT_ONEAPI_BACKEND_CUDA
     case backend::ext_oneapi_cuda: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_cuda>(accessor));
-#endif
-#ifdef SYCL_EXT_ONEAPI_BACKEND_HIP
+  #endif
+  #ifdef SYCL_EXT_ONEAPI_BACKEND_HIP
     case backend::ext_oneapi_hip: return reinterpret_cast<T *>(ih.get_native_mem<backend::ext_oneapi_hip>(accessor));
-#endif
+  #endif
     default:
       std::stringstream ss;
       ss << "backend " << ih.get_backend() << " does not support a pointer-based sycl::interop_handle::get_native_mem";
       throw std::logic_error(ss.str());
   }
 }
+#endif
 
 void run_send_recv_halo(Chunk *chunk, Settings &settings,                                 //
                         FieldBufferType src_send_buffer, FieldBufferType src_recv_buffer, //
@@ -247,7 +250,7 @@ void run_send_recv_halo(Chunk *chunk, Settings &settings,                       
     chunk->ext->device_queue->submit([&](sycl::handler &h) {
       auto snd_buffer_acc = src_send_buffer->get_access<access_mode::read>(h);
       auto rcv_buffer_acc = src_recv_buffer->get_access<access_mode::write>(h);
-      h.host_task([=, &settings](sycl::interop_handle ih) {                       // XXX pass handle arg here as copy, not ref!
+      h.host_task([=, &settings](sycl::interop_handle ih) {            // XXX pass handle arg here as copy, not ref!
         send_recv_message(settings,                                    //
                           get_native_ptr_or_throw(ih, snd_buffer_acc), //
                           get_native_ptr_or_throw(ih, rcv_buffer_acc), //
@@ -256,13 +259,55 @@ void run_send_recv_halo(Chunk *chunk, Settings &settings,                       
     });
   }
 #else
-  chunk->ext->device_queue->wait_and_throw();
-  send_recv_message(settings, //
-                    host_accessor<double, 1, access_mode::read>{*src_send_buffer, buffer_len}.get_pointer(),
-                    host_accessor<double, 1, access_mode::read>{*src_recv_buffer, buffer_len}.get_pointer(), buffer_len, neighbour,
-                    send_tag, recv_tag, send_request, recv_request);
+  if (settings.staging_buffer) {
+    chunk->ext->device_queue->wait_and_throw();
+    send_recv_message(settings, //
+                      host_accessor<double, 1, access_mode::read_write>{*src_send_buffer, buffer_len}.get_pointer(),
+                      host_accessor<double, 1, access_mode::read_write>{*src_recv_buffer, buffer_len}.get_pointer(), buffer_len, neighbour,
+                      send_tag, recv_tag, send_request, recv_request);
+  } else {
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    //    chunk->ext->device_queue->wait_and_throw();
+    auto d = chunk->ext->device_queue->get_device();
+    // Construct the buffers so that get_pointer is not nullptr, only happens once per rank for the lifetime of the program
+    if (!src_recv_buffer->get_pointer(d))
+      chunk->ext->device_queue->submit([&](sycl::handler &h) { h.update(sycl::accessor{*src_recv_buffer, h}); }).wait_and_throw();
+    if (!src_send_buffer->get_pointer(d))
+      chunk->ext->device_queue->submit([&](sycl::handler &h) { h.update(sycl::accessor{*src_send_buffer, h}); }).wait_and_throw();
+    // We can't use host_task here, but since we can pull out the pointers directly, if we synchronise before MPI_Waitall
+    // the desired concurrency should still be there
+    chunk->ext->device_queue->submit([&](sycl::handler &h) {
+                              h.update(sycl::accessor{*src_send_buffer, h, sycl::read_only});
+                            })
+        .wait_and_throw();
+    chunk->ext->device_queue->submit([&](sycl::handler &h) {
+                              h.update(sycl::accessor{*src_recv_buffer, h, sycl::write_only});
+                            })
+        .wait_and_throw();
+    send_recv_message(settings,                        //
+                      src_send_buffer->get_pointer(d), //
+                      src_recv_buffer->get_pointer(d), //
+                      buffer_len, neighbour, send_tag, recv_tag, send_request, recv_request);
+  #else
+    throw std::logic_error("host_task is disabled and staging is also disabled, this won't work");
+  #endif
+  }
 #endif
 }
 
-void run_before_waitall_halo(Chunk *chunk, Settings &) { chunk->ext->device_queue->wait_and_throw(); }
+void run_before_waitall_halo(Chunk *chunk, Settings &settings) {
+#ifdef USE_HOSTTASK
+  chunk->ext->device_queue->wait_and_throw();
+#else
+  if (settings.staging_buffer) {
+    // drop-through to waitall directly
+  } else {
+  #if defined(__HIPSYCL__) || defined(__OPENSYCL__)
+    chunk->ext->device_queue->wait_and_throw();
+  #else
+    throw std::logic_error("host_task is disabled and staging is also disabled, this won't work");
+  #endif
+  }
+#endif
+}
 void run_restore_recv_halo(Chunk *, Settings &, FieldBufferType, StagingBufferType, int) {}

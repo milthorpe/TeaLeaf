@@ -38,24 +38,27 @@ void jacobi_init(const int x,           //
         });
       })
       .wait_and_throw();
+#ifdef ENABLE_PROFILING
+  device_queue.wait_and_throw();
+#endif
 }
 
 // Main Jacobi solver method.
-void jacobi_iterate(const int x,          //
-                    const int y,          //
-                    const int halo_depth, //
-                    SyclBuffer &u,        //
-                    SyclBuffer &u0,       //
-                    SyclBuffer &r,        //
-                    SyclBuffer &kx,       //
-                    SyclBuffer &ky,       //
-                    double *error,        //
+void jacobi_iterate(const int x,            //
+                    const int y,            //
+                    const int halo_depth,   //
+                    SyclBuffer &u,          //
+                    SyclBuffer &u0,         //
+                    SyclBuffer &r,          //
+                    SyclBuffer &kx,         //
+                    SyclBuffer &ky,         //
+                    SyclBuffer &error_temp, //
+                    double *error,          //
                     queue &device_queue) {
-  buffer<double, 1> error_temp{range<1>{1}};
-  device_queue.submit([&](handler &h) {
-    h.parallel_for<class jacobi_iterate>(
-        range<1>(x * y),                                                                                         //
-        sycl::reduction(error_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+  auto event = device_queue.submit([&](handler &h) {
+    h.parallel_for<class jacobi_iterate>(                         //
+        range<1>(x * y),                                          //
+        reduction_shim(error_temp, *error, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;
@@ -67,10 +70,10 @@ void jacobi_iterate(const int x,          //
           }
         });
   });
+  device_queue.copy(error_temp, error, 1, event).wait_and_throw();
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
 #endif
-  *error = error_temp.get_host_access()[0];
 }
 
 // Copies u into r
@@ -100,8 +103,8 @@ void run_jacobi_iterate(Chunk *chunk, Settings &settings, double *error) {
 
   jacobi_copy_u(chunk->x, chunk->y, (chunk->r), (chunk->u), *(chunk->ext->device_queue));
 
-  jacobi_iterate(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->u0), (chunk->r), (chunk->kx), (chunk->ky), error,
-                 *(chunk->ext->device_queue));
+  jacobi_iterate(chunk->x, chunk->y, settings.halo_depth, (chunk->u), (chunk->u0), (chunk->r), (chunk->kx), (chunk->ky),
+                 (chunk->ext->reduction_jacobi_error), error, *(chunk->ext->device_queue));
 
   STOP_PROFILING(settings.kernel_profile, __func__);
 }

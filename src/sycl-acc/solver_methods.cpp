@@ -32,9 +32,9 @@ void field_summary_func(const int x,             //
     auto density = densityBuff.get_access<access::mode::read>(h);
     auto energy0 = energy0Buff.get_access<access::mode::read>(h);
     auto volume = volumeBuff.get_access<access::mode::read>(h);
-    h.parallel_for<class field_summary_func>(
-        range<1>(x * y),                                                                                           //
-        sycl::reduction(summary_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+    h.parallel_for<class field_summary_func>(                       //
+        range<1>(x * y),                                            //
+        reduction_shim(summary_temp, h, {}, sycl::plus<Summary>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;
@@ -141,8 +141,8 @@ void calculate_2norm(const int x,            //
   buffer<double, 1> norm_temp{range<1>{1}};
   device_queue.submit([&](handler &h) {
     auto buffer = bufferBuff.get_access<access::mode::read>(h);
-    h.parallel_for<class calculate_2norm>(
-        range<1>(x * y), sycl::reduction(norm_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+    h.parallel_for<class calculate_2norm>(                                       //
+        range<1>(x * y), reduction_shim(norm_temp, h, {}, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;

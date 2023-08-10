@@ -86,9 +86,9 @@ void cg_init_others(const int x,          //
     auto p = pBuff.get_access<access::mode::read_write>(h);
     auto kx = kxBuff.get_access<access::mode::read>(h);
     auto ky = kyBuff.get_access<access::mode::read>(h);
-    h.parallel_for<class cg_init_others>(
-        range<1>(x * y),                                                                                       //
-        sycl::reduction(rro_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+    h.parallel_for<class cg_init_others>(                      //
+        range<1>(x * y),                                       //
+        reduction_shim(rro_temp, h, {}, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;
@@ -124,19 +124,20 @@ void cg_calc_w(const int x,          //
     auto p = pBuff.get_access<access::mode::read>(h);
     auto kx = kxBuff.get_access<access::mode::read>(h);
     auto ky = kyBuff.get_access<access::mode::read>(h);
-    h.parallel_for<class cg_calc_w>(range<1>(x * y),                                                                                      //
-                                    sycl::reduction(pw_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
-                                    [=](item<1> item, auto &acc) {
-                                      const auto kk = item[0] % x;
-                                      const auto jj = item[0] / x;
-                                      if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
-                                        // smvp uses kx and ky and index
-                                        int index = item[0];
-                                        const double smvp = tealeaf_SMVP(p);
-                                        w[item[0]] = smvp;
-                                        acc += w[item[0]] * p[item[0]];
-                                      }
-                                    });
+    h.parallel_for<class cg_calc_w>(                          //
+        range<1>(x * y),                                      //
+        reduction_shim(pw_temp, h, {}, sycl::plus<double>()), //
+        [=](item<1> item, auto &acc) {
+          const auto kk = item[0] % x;
+          const auto jj = item[0] / x;
+          if (kk >= halo_depth && kk < x - halo_depth && jj >= halo_depth && jj < y - halo_depth) {
+            // smvp uses kx and ky and index
+            int index = item[0];
+            const double smvp = tealeaf_SMVP(p);
+            w[item[0]] = smvp;
+            acc += w[item[0]] * p[item[0]];
+          }
+        });
   });
 #ifdef ENABLE_PROFILING
   device_queue.wait_and_throw();
@@ -162,9 +163,9 @@ void cg_calc_ur(const int x,          //
     auto p = pBuff.get_access<access::mode::read>(h);
     auto u = uBuff.get_access<access::mode::read_write>(h);
     auto r = rBuff.get_access<access::mode::read_write>(h);
-    h.parallel_for<class cg_calc_ur>(
-        range<1>(x * y),                                                                                       //
-        sycl::reduction(rrn_temp, h, {}, sycl::plus<>(), sycl::property::reduction::initialize_to_identity()), //
+    h.parallel_for<class cg_calc_ur>(                          //
+        range<1>(x * y),                                       //
+        reduction_shim(rrn_temp, h, {}, sycl::plus<double>()), //
         [=](item<1> item, auto &acc) {
           const auto kk = item[0] % x;
           const auto jj = item[0] / x;

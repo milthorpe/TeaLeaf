@@ -283,11 +283,11 @@ void run_kernel_initialise(Chunk *chunk, Settings &settings, int comms_lr_len, i
   allocate_buffer(&(chunk->cheby_betas), settings.max_iters, 1);
 }
 
-void run_kernel_finalise(Chunk *chunk, Settings &settings) {
-  delete chunk->cg_alphas;
-  delete chunk->cg_betas;
-  delete chunk->cheby_alphas;
-  delete chunk->cheby_betas;
+void run_kernel_finalise(Chunk *chunk, Settings &) {
+  delete[] chunk->cg_alphas;
+  delete[] chunk->cg_betas;
+  delete[] chunk->cheby_alphas;
+  delete[] chunk->cheby_betas;
 
   delete chunk->density0;
   delete chunk->density;
