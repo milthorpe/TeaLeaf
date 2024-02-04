@@ -14,8 +14,8 @@ initial_timestep=0.004
 end_step=10
 max_iters=10000
 use_cg
-eps 1.0e-15
-test_problem 6
+eps=1.0e-15
+test_problem=6
 profiler_on
 use_c_kernels
 *endtea
