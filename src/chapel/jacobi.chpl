@@ -54,7 +54,7 @@ module jacobi {
     // The main Jacobi solve step
     proc jacobi_iterate(const in halo_depth: int, ref u: [?Domain] real, const ref u0: [Domain] real, 
                         ref r: [Domain] real, ref error: real, const ref kx: [Domain] real, 
-                        const ref ky: [Domain] real, ref temp: [Domain] real, const ref reduced_OneD : domain(1), const ref reduced_local_domain : domain(2), const ref local_domain : domain(2), const ref OneD : domain(1)) {
+                        const ref ky: [Domain] real, ref temp: [Domain] real) {
 
         forall (i, j) in Domain {
             r[i,j] = u[i,j];
