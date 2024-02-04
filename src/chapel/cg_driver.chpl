@@ -8,8 +8,7 @@ module cg_driver {
 
     // Performs a full solve with the CG solver kernels
     proc cg_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, ref rx: real,
-                    ref ry: real, ref error: real, ref interation_count : int){
-        //var tt: int;
+                    ref ry: real, ref error: real, ref interation_count : int) {
         var rro : real;
         var t : int;
 
@@ -18,8 +17,7 @@ module cg_driver {
 
         var tt_prime : int;
         // Iterate till convergence
-        for tt in 0..<setting_var.max_iters do {
-            
+        for tt in 0..<setting_var.max_iters {
             cg_main_step_driver(chunk_var, setting_var, tt, rro, error);
 
             halo_update_driver (chunk_var, setting_var, 1);
@@ -50,7 +48,7 @@ module cg_driver {
 
     // Invokes the main CG solve kernels
     proc cg_main_step_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, in tt : int,
-                                ref rro: real, ref error: real){
+                                ref rro: real, ref error: real) {
         var pw: real;
         
         cg_calc_w (setting_var.halo_depth, pw, chunk_var.p, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp);
@@ -69,7 +67,5 @@ module cg_driver {
         cg_calc_p (setting_var.halo_depth, beta, chunk_var.p, chunk_var.r);
         error = rrn;
         rro = rrn;
-        
     }
-
 }

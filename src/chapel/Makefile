@@ -5,7 +5,7 @@ MAKEFLAGS += --warn-undefined-variables --no-builtin-rules
 
 # -------
 
-CHPL_FLAGS+=-sverbose=true -sprintLocaleInfo=true --detailed-errors --savec tmp --print-commands
+CHPL_FLAGS+=-senableProfiling=true -sprintLocaleInfo=true --detailed-errors --savec tmp --print-commands
 CHPL_SOURCE=$(wildcard *.chpl)
 ifeq ($(CHPL_LOCALE_MODEL),gpu)
 # GPU version

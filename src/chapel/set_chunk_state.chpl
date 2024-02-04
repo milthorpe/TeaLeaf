@@ -10,16 +10,16 @@ module set_chunk_state{
     use profile;
 
     proc set_chunk_state(ref states : [0..<setting_var.num_states]settings.state, ref chunk_var : chunks.Chunk, 
-                        const ref setting_var : settings.setting){ 
-        // profiler.startTimer("set_chunk_state");
+                        const ref setting_var : settings.setting) { 
+        startProfiling("set_chunk_state");
         
         // Set the initial state
-        forall ij in chunk_var.energy0.domain with (ref chunk_var){
+        forall ij in chunk_var.energy0.domain with (ref chunk_var) {
             chunk_var.energy0[ij] = states[0].energy;
             chunk_var.density[ij] = states[0].density;
         }
         // Apply all of the states in turn
-        for ss in 1..<setting_var.num_states do {
+        for ss in 1..<setting_var.num_states {
 
             // If a state boundary falls exactly on a cell boundary
             // then round off can cause the state to be put one cell
@@ -34,19 +34,18 @@ module set_chunk_state{
             states[ss].x_max -= (setting_var.dx/100.0);
             states[ss].y_max -= (setting_var.dy/100.0);
 
-            for (kk, jj) in {0..<chunk_var.y, 0..<chunk_var.x} do {
-
+            for (kk, jj) in {0..<chunk_var.y, 0..<chunk_var.x} {
+                
                 var apply_state: bool = false;
 
                 if states[ss].geometry == settings.Geometry.RECTANGULAR {
                     if (chunk_var.vertex_x[jj+1] >= states[ss].x_min) && 
                     (chunk_var.vertex_x[jj] < states[ss].x_max) && 
                     (chunk_var.vertex_y[kk+1] >= states[ss].y_min) && 
-                    (chunk_var.vertex_y[kk] < states[ss].y_max){
+                    (chunk_var.vertex_y[kk] < states[ss].y_max) {
                         apply_state = true;
                     }
-                }
-                else if states[ss].geometry == settings.Geometry.CIRCULAR {
+                } else if states[ss].geometry == settings.Geometry.CIRCULAR {
                     var radius: real;
                     
                     radius = sqrt(
@@ -56,15 +55,14 @@ module set_chunk_state{
                         (chunk_var.cell_y[kk]-states[ss].y_min)));
 
                     if radius <= states[ss].radius then apply_state = true;
-                }
-                else if states[ss].geometry == settings.Geometry.POINT{
+                } else if states[ss].geometry == settings.Geometry.POINT{
                     if chunk_var.vertex_x[jj] == states[ss].x_min && 
                     chunk_var.vertex_y[kk] == states[ss].y_min {
                         apply_state = true;
                     }
                 }
-                if apply_state 
-                {
+
+                if apply_state {
                     // Note: reversed kk and jj to match output from reference code
                     chunk_var.energy0[kk, jj] = states[ss].energy;  
                     chunk_var.density[kk, jj] = states[ss].density;
@@ -73,17 +71,15 @@ module set_chunk_state{
         }
         for ij in chunk_var.u.domain do chunk_var.u[ij] = chunk_var.energy0[ij] * chunk_var.density[ij];
         
-        // profiler.stopTimer("set_chunk_state");
+        stopProfiling("set_chunk_state");
     }
 /*
  *      SET CHUNK STATE DRIVER
  */
     // Invokes the set chunk state kernel
     proc set_chunk_state_driver (ref chunk_var : chunks.Chunk, const ref setting_var : settings.setting, 
-                                ref states : [0..<setting_var.num_states] settings.state){
+                                ref states : [0..<setting_var.num_states] settings.state) {
         // Issue kernel to all local chunks
         set_chunk_state(states, chunk_var, setting_var);
     }
-
-
 }

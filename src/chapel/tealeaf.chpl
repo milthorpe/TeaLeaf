@@ -15,7 +15,6 @@ module main {
     use profile;
     use GpuDiagnostics;
     
-    config param verbose = false;
     param TEALEAF_VERSION = "2.0";
 
     proc main (args: [] string){
@@ -38,10 +37,12 @@ module main {
             writef(" - Out:      %s\n", setting_var.tea_out_filename);
             writef(" - Problem:  %s\n", setting_var.test_problem_filename);
             writef(" - Solver:   %s\n", setting_var.solver);
-            writef(" - Profiler: %s\n", verbose: string);
+            writef(" - Profiler: %s\n", enableProfiling: string);
             writeln("Model:");
             writef(" - Name:      %s\n", "Chapel");
             writef(" - Execution: %s\n", if useGPU then "Offload" else "Host");
+
+            initProfiling();
 
             // Initialise states
             find_num_states(setting_var); 
@@ -62,7 +63,7 @@ module main {
 
             diffuse(chunk_var, setting_var);
             // Print the verbose profile summary
-            if !useGPU && verbose then  profiler.report();
+            reportProfiling();
         }
         wallclock.stop();
         writeln("\nTotal time elapsed: ", wallclock.elapsed(), " seconds");   

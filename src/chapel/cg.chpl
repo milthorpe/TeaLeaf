@@ -7,18 +7,18 @@ module cg {
     use profile;
     use chunks;
     use GPU;
+
     proc cg_init(const ref x: int, const ref y : int, const ref halo_depth: int, const in coefficient: int, in rx: real, 
                 in ry: real, ref rro: real,  ref density: [?Domain] real,  ref energy: [Domain] real,
                 ref u: [Domain] real,  ref p: [Domain] real,  ref r: [Domain] real,  ref w: [Domain] real,  
-                ref kx: [Domain] real, ref ky: [Domain] real, ref temp: [Domain] real){
+                ref kx: [Domain] real, ref ky: [Domain] real, ref temp: [Domain] real) {
 
-        // profiler.startTimer("cg_init");
-        if coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY
-        {
+        if coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY {
             writeln("Coefficient ", coefficient, " is not valid.\n");
-            // profiler.stopTimer("cg_init");
             exit(-1);
         }
+
+        startProfiling("cg_init");
 
         foreach ij in Domain {
             p[ij] = 0;
@@ -26,23 +26,21 @@ module cg {
             u[ij] = energy[ij] *density[ij];
         }
         
-        forall (i, j) in Domain.expand(-1)  do {
+        forall (i, j) in Domain.expand(-1) {
             if (coefficient == CONDUCTIVITY) then
                 w[i,j] = density[i,j];
             else  
                 w[i,j] = 1.0/density[i,j];
-            
         }
 
-
         const inner_1 = Domain[halo_depth..<y-1, halo_depth..<x-1];
-        forall (i, j) in inner_1 do {
+        forall (i, j) in inner_1 {
             kx[i, j] = rx*(w[i-1, j]+w[i, j]) / (2.0*w[i-1, j]*w[i, j]);
             ky[i, j] = ry*(w[i, j-1]+w[i, j]) / (2.0*w[i, j-1]*w[i, j]);
         }   
          
         if useGPU then {  // GPU version of Loop
-            forall (i, j) in Domain.expand(-halo_depth) do {
+            forall (i, j) in Domain.expand(-halo_depth) {
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*u[i, j]
                     - (kx[i+1, j]*u[i+1, j]+kx[i, j]*u[i-1, j])
@@ -54,9 +52,9 @@ module cg {
                 temp[i, j] = p[i,j]*p[i,j]; 
             }   
             rro = gpuSumReduce(temp);
-        } else{ // CPU version
+        } else { // CPU version
             var rro_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rro_temp) do {
+            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rro_temp) {
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*u[i, j]
                     - (kx[i+1, j]*u[i+1, j]+kx[i, j]*u[i-1, j])
@@ -70,30 +68,28 @@ module cg {
             rro += rro_temp;
         }
 
-
-        // profiler.stopTimer("cg_init");
+        stopProfiling("cg_init");
     }
 
     // Calculates w
     proc cg_calc_w (const in halo_depth: int, ref pw: real, const ref p: [?Domain] real, 
-                    ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real){
+                    ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real) {
 
-        // profiler.startTimer("cg_calc_w");
+        startProfiling("cg_calc_w");
         
         if useGPU {
-        forall (i, j) in Domain.expand(-halo_depth)  do{
-            const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
-                + (ky[i, j+1]+ky[i, j]))*p[i, j]
-                - (kx[i+1, j]*p[i+1, j]+kx[i, j]*p[i-1, j])
-                - (ky[i, j+1]*p[i, j+1]+ky[i, j]*p[i, j-1]);
-            w[i,j] = smvp;
-            temp[i, j] = smvp * p[i, j]; 
-        }   
-        
+            forall (i, j) in Domain.expand(-halo_depth) {
+                const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
+                    + (ky[i, j+1]+ky[i, j]))*p[i, j]
+                    - (kx[i+1, j]*p[i+1, j]+kx[i, j]*p[i-1, j])
+                    - (ky[i, j+1]*p[i, j+1]+ky[i, j]*p[i, j-1]);
+                w[i,j] = smvp;
+                temp[i, j] = smvp * p[i, j]; 
+            }
             pw = gpuSumReduce(temp);
         } else {
             var pw_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce pw_temp) do{
+            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce pw_temp) {
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*p[i, j]
                     - (kx[i+1, j]*p[i+1, j]+kx[i, j]*p[i-1, j])
@@ -105,17 +101,17 @@ module cg {
     
             pw += pw_temp;
         }
-        // profiler.stopTimer("cg_calc_w");
+        stopProfiling("cg_calc_w");
     }
     
     // Calculates u and r
     proc cg_calc_ur(const in halo_depth: int, const in alpha: real, ref rrn: real, 
                     ref u: [?Domain] real, const ref p: [Domain] real, 
-                    ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real){
-        // profiler.startTimer("cg_calc_ur");
+                    ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real) {
+        startProfiling("cg_calc_ur");
 
         if useGPU {
-            forall (i, j) in Domain.expand(-halo_depth) do{
+            forall (i, j) in Domain.expand(-halo_depth) {
                 u[i, j] += alpha * p[i, j];
                 r[i, j] -= alpha * w[i, j];
                 
@@ -126,7 +122,7 @@ module cg {
             rrn = gpuSumReduce(temp);
         } else {
             var rrn_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rrn_temp) do{
+            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rrn_temp) {
                 u[i, j] += alpha * p[i, j];
                 r[i, j] -= alpha * w[i, j];
                 
@@ -135,17 +131,17 @@ module cg {
             }
             rrn += rrn_temp;
         }
-        // profiler.stopTimer("cg_calc_ur");
+        stopProfiling("cg_calc_ur");
     }
 
     // Calculates p
     proc cg_calc_p (const ref halo_depth: int, const in beta: real, ref p: [?Domain] real, 
                     const ref r: [Domain] real) {
-        // profiler.startTimer("cg_calc_p");
+        startProfiling("cg_calc_p");
         
         [ij in Domain.expand(-halo_depth)] p[ij] = beta * p[ij] + r[ij];
 
-        // profiler.stopTimer("cg_calc_p");
+        stopProfiling("cg_calc_p");
     }
 
 }

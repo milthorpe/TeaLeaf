@@ -1,4 +1,4 @@
-module diffuse{
+module diffuse {
     use Time;
     use chunks;
     use settings;
@@ -14,7 +14,7 @@ module diffuse{
     use parse_config;
 
     // The main timestep loop
-    proc diffuse(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting){
+    proc diffuse(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting) {
         const end_step = setting_var.end_step : int;
 
         for tt in 0..<end_step do{
@@ -24,7 +24,7 @@ module diffuse{
     }
 
     // Performs a solve for a single timestep
-    proc solve(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const ref tt : int){
+    proc solve(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const ref tt : int) {
         
         //start timer
         var wallclock = new stopwatch();
@@ -49,7 +49,7 @@ module diffuse{
         var inner_steps : int = 0;
 
         // Perform the solve with one of the integrated solvers
-        select (setting_var.solver){
+        select (setting_var.solver) {
             when Solver.Jacobi{
                 jacobi_driver(chunk_var, setting_var, rx, ry, error, iterations_count);
             }
@@ -70,7 +70,7 @@ module diffuse{
         // Perform solve finalisation tasks
         solve_finished_driver(chunk_var, setting_var);
         
-        if(tt % setting_var.summary_frequency == 0){
+        if tt % setting_var.summary_frequency == 0 {
             field_summary_driver(chunk_var, setting_var, false);
         }
 
@@ -78,8 +78,5 @@ module diffuse{
         writeln("Time elapsed for current timestep: ", wallclock.elapsed(), " seconds");
         const average : real = wallclock.elapsed()/ (setting_var.grid_x_cells * setting_var.grid_y_cells);
         writeln("Avg. time per cell for current timestep: ",  average, " seconds \n");
-
-        
-        // writeln(getGpuDiagnostics());
     }
 }
