@@ -1,5 +1,5 @@
 // Initialise the chunkBlock
-module chunks{
+module chunks {
   use settings;
   use StencilDist;
   use BlockDist;
@@ -16,14 +16,14 @@ module chunks{
   config var global_halo_depth = 2;
   config var global_dt_init = 0.0;
 
-  proc set_var (const ref setting_var : settings.setting){
+  proc set_var(const ref setting_var : settings.setting) {
     global_halo_depth = setting_var.halo_depth;
     global_x = setting_var.grid_x_cells;
     global_y = setting_var.grid_y_cells;
     global_dt_init = setting_var.dt_init;
   }
 
-  record Chunk{
+  record Chunk {
     var halo_depth: int = global_halo_depth;
     var x_inner: int = global_x;
     var y_inner: int = global_y;
@@ -46,10 +46,9 @@ module chunks{
     const max_iter_domain : domain(1) = {0..<settings.max_iters};
     
     // Define the bounds of the arrays
-    var Domain = if useStencilDist then local_Domain dmapped stencilDist(local_Domain, fluff=(1, 1))
+    const Domain = if useStencilDist then local_Domain dmapped stencilDist(local_Domain, fluff=(1, 1))
                 else if useBlockDist then local_Domain dmapped blockDist(local_Domain)
                 else local_Domain;
-    
     
     //TODO set up condition to make sure number of locales is only so big compared to grid size
     // if numLocales > (x * y) 
