@@ -14,6 +14,7 @@ module main {
     use initialise;
     use profile;
     use GpuDiagnostics;
+    use IO;
     
     param TEALEAF_VERSION = "2.0";
 
@@ -41,6 +42,7 @@ module main {
             writeln("Model:");
             writef(" - Name:      %s\n", "Chapel");
             writef(" - Execution: %s\n", if useGPU then "Offload" else "Host");
+            try! stdout.flush();
 
             initProfiling();
 

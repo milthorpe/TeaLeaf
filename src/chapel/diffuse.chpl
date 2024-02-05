@@ -10,8 +10,7 @@ module diffuse {
     use jacobi_driver;
     use cheby_driver;
     use profile;
-    use main;
-    use parse_config;
+    use IO;
 
     var wallclock = new stopwatch();
 
@@ -82,5 +81,6 @@ module diffuse {
         const average : real = wallclock.elapsed() / (setting_var.grid_x_cells * setting_var.grid_y_cells);
         writeln(" Avg. time per cell:    ", average, " s");
         writeln(" Error:                 ", error);
+        try! stdout.flush();
     }
 }
