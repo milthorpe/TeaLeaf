@@ -32,24 +32,22 @@ module chunks {
     var y: int = y_inner + halo_depth * 2;
     
     // Domains
-    const local_Domain : domain(2) = {0..<y, 0..<x};
-    const OneD  : domain(1) = {0..<y*x};
-    const reduced_local_domain = local_Domain.expand(-halo_depth);
-    const reduced_OneD  : domain(1) = {0..<(y - 2 * halo_depth) * (x - 2 * halo_depth)};
+    const local_Domain = {0..<y, 0..<x};
+    const OneD = {0..<y*x};
 
-    const x_domain : domain(1) = {0..<x};
-    const y_domain : domain(1) = {0..<y};
-    const x1_domain: domain(1)  = {0..<x+1};
-    const y1_domain : domain(1) = {0..<y+1};
-    // const x_area_domain : domain(2) = {0..<y, 0..<x+1};
-    // const y_area_domain : domain(2) = {0..<y+1, 0..<x};
-    const max_iter_domain : domain(1) = {0..<settings.max_iters};
-    
     // Define the bounds of the arrays
     const Domain = if useStencilDist then local_Domain dmapped stencilDist(local_Domain, fluff=(1, 1))
                 else if useBlockDist then local_Domain dmapped blockDist(local_Domain)
                 else local_Domain;
-    
+    const reduced_local_domain = Domain.expand(-halo_depth);
+    const reduced_OneD = {0..<(y - 2 * halo_depth) * (x - 2 * halo_depth)};
+
+    const x_domain = {0..<x};
+    const y_domain = {0..<y};
+    const x1_domain = {0..<x+1};
+    const y1_domain = {0..<y+1};
+    const max_iter_domain = {0..<settings.max_iters};
+  
     //TODO set up condition to make sure number of locales is only so big compared to grid size
     // if numLocales > (x * y) 
     // {
@@ -92,8 +90,6 @@ module chunks {
     var vertex_dy: [y1_domain] real = noinit;
 
     var volume: [Domain] real = noinit;
-    // var x_area: [x_area_domain] real = noinit;
-    // var y_area: [y_area_domain] real = noinit;
 
     // Cheby and PPCG arrays
     var theta: real;
