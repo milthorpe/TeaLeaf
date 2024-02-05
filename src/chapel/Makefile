@@ -12,7 +12,8 @@ ifeq ($(CHPL_LOCALE_MODEL),gpu)
 ifndef CHPL_GPU
 $(error CHPL_GPU not defined)
 else
-CHPL_FLAGS+=--report-gpu -suseGPU=true --ldflags -no-pie --gpu-block-size=1024
+BLOCK_SIZE=512
+CHPL_FLAGS+=--report-gpu -suseGPU=true --ldflags -no-pie --gpu-block-size=$(BLOCK_SIZE)
 ifeq ($(CHPL_GPU),nvidia)
 LDFLAGS+=-L$(CUDA_PATH)/lib64 -lcudart
 else
@@ -32,12 +33,11 @@ ifdef CHPL_GPU
 $(error CHPL_GPU is set, but CHPL_LOCALE_MODEL!= gpu)
 endif
 endif
+CHPL_FLAGS+=--fast --no-ieee-float# --llvm-remarks=vector
+CUDACXX_FLAGS+=-O3
 ifdef DEBUG
   CHPL_FLAGS+=-g --devel
   CUDACXX_FLAGS=-g
-else
-  CHPL_FLAGS+=--fast --no-ieee-float# --llvm-remarks=vector
-  CUDACXX_FLAGS+=-O3
 endif
 CHPL = chpl
 
