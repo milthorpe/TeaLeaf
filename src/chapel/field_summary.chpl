@@ -17,12 +17,13 @@ module field_summary {
         startProfiling("field_summary");
 
         if useGPU {
-            var tempVol: [Domain] real = noinit, 
-            tempMass: [Domain] real = noinit,
-            tempIe: [Domain] real = noinit,
-            tempTemp: [Domain] real = noinit;
+            const innerDomain = Domain.expand(-halo_depth);
+            var tempVol: [innerDomain] real = noinit, 
+            tempMass: [innerDomain] real = noinit,
+            tempIe: [innerDomain] real = noinit,
+            tempTemp: [innerDomain] real = noinit;
 
-            forall ij in Domain.expand(-halo_depth) {
+            forall ij in innerDomain {
                 var cellMass: real;
                 tempVol[ij] = volume[ij];
                 cellMass = volume[ij] * density[ij];

@@ -40,15 +40,17 @@ module solver_methods {
 
         var norm_temp: real;
 
+        const innerDomain = buffer_domain.expand(-halo_depth);
+
         if useGPU {
-            forall ij in buffer_domain.expand(-halo_depth) {
+            forall ij in innerDomain {
                 buffer[ij] = buffer[ij] ** 2;
             } 
         
-            norm_temp = gpuSumReduce(buffer); // This causes a lot of transfers between host and device
+            norm_temp = gpuSumReduce(buffer[innerDomain]); // This causes a lot of transfers between host and device
         
         } else {
-            norm_temp = + reduce (buffer[buffer_domain.expand(-halo_depth) ] ** 2);
+            norm_temp = + reduce (buffer[innerDomain] ** 2);
         }
         norm = norm_temp;
 
