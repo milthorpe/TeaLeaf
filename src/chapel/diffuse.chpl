@@ -13,6 +13,8 @@ module diffuse {
     use main;
     use parse_config;
 
+    var wallclock = new stopwatch();
+
     // The main timestep loop
     proc diffuse(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting) {
         const end_step = setting_var.end_step : int;
@@ -26,8 +28,6 @@ module diffuse {
     // Performs a solve for a single timestep
     proc solve(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const ref tt : int) {
         
-        //start timer
-        var wallclock = new stopwatch();
         wallclock.start();
 
         // Calculate minimum timestep information
@@ -48,6 +48,9 @@ module diffuse {
         var iterations_prime : int = 0;
         var inner_steps : int = 0;
 
+        writeln();
+        writeln(" Timestep ", tt);
+
         // Perform the solve with one of the integrated solvers
         select (setting_var.solver) {
             when Solver.Jacobi{
@@ -66,7 +69,6 @@ module diffuse {
             }
         }
 
-        writeln("Conduction error : ", error);
         // Perform solve finalisation tasks
         solve_finished_driver(chunk_var, setting_var);
         
@@ -75,8 +77,10 @@ module diffuse {
         }
 
         wallclock.stop();
-        writeln("Time elapsed for current timestep: ", wallclock.elapsed(), " seconds");
-        const average : real = wallclock.elapsed()/ (setting_var.grid_x_cells * setting_var.grid_y_cells);
-        writeln("Avg. time per cell for current timestep: ",  average, " seconds \n");
+        
+        writef(" Wallclock:             %.3dr s\n", wallclock.elapsed());
+        const average : real = wallclock.elapsed() / (setting_var.grid_x_cells * setting_var.grid_y_cells);
+        writeln(" Avg. time per cell:    ", average, " s");
+        writeln(" Error:                 ", error);
     }
 }
