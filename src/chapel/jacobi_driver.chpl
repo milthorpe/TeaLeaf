@@ -6,8 +6,8 @@ module jacobi_driver {
     use jacobi;
 
     // Performs a full solve with the Jacobi solver kernels
-    proc jacobi_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, ref rx: real,
-    ref ry: real, ref err: real, ref interation_count : int) {
+    proc jacobi_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const in rx: real,
+    const in ry: real, out err: real, out interation_count : int) {
         
         jacobi_init_driver(chunk_var, setting_var, rx, ry);
         
@@ -48,10 +48,11 @@ module jacobi_driver {
 
     // Invokes the main Jacobi solve kernels
     proc jacobi_main_step_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
-                                    const ref tt: int, ref err: real) {
+                                    const in tt: int, out err: real) {
 
         jacobi_iterate(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, err, 
-                        chunk_var.kx, chunk_var.ky, chunk_var.temp);
+                        chunk_var.kx, chunk_var.ky, chunk_var.temp,
+                        chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
         if tt % 50 == 0 {
                         
             // halo_update_driver(chunk_var, setting_var, 1);

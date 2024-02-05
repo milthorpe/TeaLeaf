@@ -82,13 +82,13 @@ module ppcg_driver{
 
         var pw: real;
         cg_calc_w(setting_var.halo_depth, pw, chunk_var.p, chunk_var.w, chunk_var.kx, 
-                  chunk_var.ky, chunk_var.temp);
+                  chunk_var.ky, chunk_var.temp, chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
         const alpha : real = rro / pw;
         var rrn : real = 0.0;
 
         cg_calc_ur (setting_var.halo_depth, alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, 
-                    chunk_var.w, chunk_var.temp);
+                    chunk_var.w, chunk_var.temp, chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
         // Perform the inner iterations
         ppcg_inner_iterations(chunk_var, setting_var);
@@ -99,7 +99,7 @@ module ppcg_driver{
 
         const beta : real = rrn / rro;
 
-        cg_calc_p(setting_var.halo_depth, beta, chunk_var.p, chunk_var.r);
+        cg_calc_p(setting_var.halo_depth, beta, chunk_var.p, chunk_var.r, chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
         error = rrn;
         rro = rrn;

@@ -7,10 +7,9 @@ module cg_driver {
     use profile;
 
     // Performs a full solve with the CG solver kernels
-    proc cg_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, ref rx: real,
-                    ref ry: real, ref error: real, ref interation_count : int) {
+    proc cg_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const in rx: real,
+                    const in ry: real, ref error: real, out interation_count : int) {
         var rro : real;
-        var t : int;
 
         // Perform CG initialisation
         cg_init_driver(chunk_var, setting_var, rx, ry, rro);
@@ -27,16 +26,15 @@ module cg_driver {
             tt_prime += 1;
         }
         interation_count = tt_prime;
-        writeln("CG iterations : ", tt_prime);
+        writeln(" CG:                    ", tt_prime, " iterations");
     }
 
     // Invokes the CG initialisation kernels
-    proc cg_init_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, ref rx: real,
-                        ref ry: real, ref rro: real) {
-        rro = 0.0;
-
+    proc cg_init_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting,
+                        const in rx: real, const in ry: real, out rro: real) {
         cg_init(chunk_var.x, chunk_var.y, setting_var.halo_depth, setting_var.coefficient, rx, ry, rro, chunk_var.density, 
-                chunk_var.energy, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp);
+                chunk_var.energy, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp,
+                chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
         reset_fields_to_exchange(setting_var);
         setting_var.fields_to_exchange[FIELD_U] = true;
@@ -51,20 +49,22 @@ module cg_driver {
                                 ref rro: real, ref error: real) {
         var pw: real;
         
-        cg_calc_w (setting_var.halo_depth, pw, chunk_var.p, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp);
+        cg_calc_w (setting_var.halo_depth, pw, chunk_var.p, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp,
+            chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
-        var alpha : real = rro / pw;
+        const alpha = rro / pw;
         
         var rrn: real;
     
         chunk_var.cg_alphas[tt] = alpha;
 
-        cg_calc_ur(setting_var.halo_depth, alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.temp);
+        cg_calc_ur(setting_var.halo_depth, alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.temp,
+            chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
 
-        var beta : real = rrn / rro;
+        const beta : real = rrn / rro;
         
         chunk_var.cg_betas[tt] = beta;
-        cg_calc_p (setting_var.halo_depth, beta, chunk_var.p, chunk_var.r);
+        cg_calc_p (setting_var.halo_depth, beta, chunk_var.p, chunk_var.r, chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
         error = rrn;
         rro = rrn;
     }
