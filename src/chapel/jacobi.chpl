@@ -54,21 +54,16 @@ module jacobi {
     // The main Jacobi solve step
     proc jacobi_iterate(const in halo_depth: int, ref u: [?Domain] real, const ref u0: [Domain] real, 
                         ref r: [Domain] real, out error: real, const ref kx: [Domain] real, 
-                        const ref ky: [Domain] real, ref temp: [Domain] real,
-                        const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1), const ref local_domain: subdomain(Domain), const ref OneD : domain(1)) {
+                        const ref ky: [Domain] real, ref temp: [Domain] real) {
 
-        //forall (i, j) in Domain {
-        forall oneDIdx in OneD {
-            const (i,j) = local_domain.orderToIndex(oneDIdx);
+        forall (i, j) in Domain {
             r[i,j] = u[i,j];
         }
 
         const north = (1,0), south = (-1,0), east = (0,1), west = (0,-1);
         
         if useGPU {
-            //forall ij in Domain.expand(-halo_depth) {
-            forall oneDIdx in reduced_OneD {
-                const ij = reduced_local_domain.orderToIndex(oneDIdx);
+            forall ij in Domain.expand(-halo_depth) {
                 const stencil : real = (u0[ij] 
                                             + kx[ij + east] * r[ij + east] 
                                             + kx[ij] * r[ij + west]

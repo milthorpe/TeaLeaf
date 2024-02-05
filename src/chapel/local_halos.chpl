@@ -35,50 +35,24 @@ module local_halos {
 
     // Updates faces in turn.
     proc update_face (const in x: int, const in y: int, const in halo_depth: int, const in depth: int, ref buffer: [?D] real) {
-        if useGPU {
-            const west_domain = D[halo_depth..<y-halo_depth, 0..<depth]; // west side of global halo
-            foreach oneDIdx in 0..#west_domain.size {
-                const (i,j) = west_domain.orderToIndex(oneDIdx);
-                buffer[i, halo_depth-j-1] = buffer[i, j + halo_depth];
-            }
+        const west_domain = D[halo_depth..<y-halo_depth, 0..<depth]; // west side of global halo
+        forall (i, j) in west_domain { 
+            buffer[i, halo_depth-j-1] = buffer[i, j + halo_depth];
+        }
 
-            const east_domain = D[halo_depth..<y-halo_depth, x..<x+depth]; // east side of global halo
-            foreach oneDIdx in 0..#east_domain.size {
-                const (i,j) = east_domain.orderToIndex(oneDIdx);
-                buffer[i, x-halo_depth + j] = buffer[i, x-halo_depth-(j + 1)];
-            }
-            
-            const south_domain = D[y..<y+depth, halo_depth..<x-halo_depth]; // south side of global halo
-            foreach oneDIdx in 0..#south_domain.size {
-                const (i,j) = south_domain.orderToIndex(oneDIdx);
-                buffer[y - halo_depth + i, j] = buffer[y - halo_depth - (i + 1), j];
-            }
+        const east_domain = D[halo_depth..<y-halo_depth, x..<x+depth]; // east side of global halo
+        forall (i, j) in east_domain { 
+            buffer[i, x-halo_depth + j] = buffer[i, x-halo_depth-(j + 1)];
+        }
+        
+        const south_domain = D[y..<y+depth, halo_depth..<x-halo_depth]; // south side of global halo
+        forall (i, j) in south_domain { 
+            buffer[y - halo_depth + i, j] = buffer[y - halo_depth - (i + 1), j];
+        }
 
-            const north_domain = D[0..<depth, halo_depth..<x-halo_depth];  //  north side of global halo
-            foreach oneDIdx in 0..#north_domain.size {
-                const (i,j) = north_domain.orderToIndex(oneDIdx);
-                buffer[halo_depth - i - 1, j] = buffer[halo_depth + i, j];
-            }
-        } else {
-            const west_domain = D[halo_depth..<y-halo_depth, 0..<depth]; // west side of global halo
-            forall (i, j) in west_domain { 
-                buffer[i, halo_depth-j-1] = buffer[i, j + halo_depth];
-            }
-
-            const east_domain = D[halo_depth..<y-halo_depth, x..<x+depth]; // east side of global halo
-            forall (i, j) in east_domain { 
-                buffer[i, x-halo_depth + j] = buffer[i, x-halo_depth-(j + 1)];
-            }
-            
-            const south_domain = D[y..<y+depth, halo_depth..<x-halo_depth]; // south side of global halo
-            forall (i, j) in south_domain { 
-                buffer[y - halo_depth + i, j] = buffer[y - halo_depth - (i + 1), j];
-            }
-
-            const north_domain = D[0..<depth, halo_depth..<x-halo_depth];  //  north side of global halo
-            forall (i, j) in north_domain {
-                buffer[halo_depth - i - 1, j] = buffer[halo_depth + i, j];
-            }
+        const north_domain = D[0..<depth, halo_depth..<x-halo_depth];  //  north side of global halo
+        forall (i, j) in north_domain {
+            buffer[halo_depth - i - 1, j] = buffer[halo_depth + i, j];
         }
     }
 }

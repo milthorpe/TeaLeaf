@@ -51,8 +51,7 @@ module jacobi_driver {
                                     const in tt: int, out err: real) {
 
         jacobi_iterate(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, err, 
-                        chunk_var.kx, chunk_var.ky, chunk_var.temp,
-                        chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
+                        chunk_var.kx, chunk_var.ky, chunk_var.temp);
         if tt % 50 == 0 {
                         
             // halo_update_driver(chunk_var, setting_var, 1);

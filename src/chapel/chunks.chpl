@@ -33,14 +33,12 @@ module chunks {
     
     // Domains
     const local_Domain = {0..<y, 0..<x};
-    const OneD = {0..<y*x};
 
     // Define the bounds of the arrays
     const Domain = if useStencilDist then local_Domain dmapped stencilDist(local_Domain, fluff=(1, 1))
                 else if useBlockDist then local_Domain dmapped blockDist(local_Domain)
                 else local_Domain;
     const reduced_local_domain = Domain.expand(-halo_depth);
-    const reduced_OneD = {0..<(y - 2 * halo_depth) * (x - 2 * halo_depth)};
 
     const x_domain = {0..<x};
     const y_domain = {0..<y};
