@@ -48,7 +48,7 @@ module diffuse {
         var inner_steps : int = 0;
 
         writeln();
-        writeln(" Timestep ", tt);
+        writeln(" Timestep ", tt+1);
 
         // Perform the solve with one of the integrated solvers
         select (setting_var.solver) {
