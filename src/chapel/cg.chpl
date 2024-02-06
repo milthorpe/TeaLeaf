@@ -27,24 +27,20 @@ module cg {
             p[ij] = 0;
             r[ij] = 0;
             u[ij] = energy[ij] *density[ij];
-        }
-        
-        forall (i, j) in Domain.expand(-1) {
-            if (coefficient == CONDUCTIVITY) then
-                w[i,j] = density[i,j];
-            else  
-                w[i,j] = 1.0/density[i,j];
+            w[ij] = if (coefficient == CONDUCTIVITY) then density[ij] else 1.0/density[ij];
         }
 
         const inner_1 = Domain[halo_depth..<y-1, halo_depth..<x-1];
-        forall (i, j) in inner_1 {
+        //forall (i, j) in inner_1 {
+        forall oneDIdx in 0..#inner_1.size {
+            const (i,j) = inner_1.orderToIndex(oneDIdx);
             kx[i, j] = rx*(w[i-1, j]+w[i, j]) / (2.0*w[i-1, j]*w[i, j]);
             ky[i, j] = ry*(w[i, j-1]+w[i, j]) / (2.0*w[i, j-1]*w[i, j]);
         }   
          
         if useGPU then {  // GPU version of Loop
             //forall (i, j) in Domain.expand(-halo_depth) {
-            forall oneDIdx in reduced_OneD {
+            foreach oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*u[i, j]
@@ -85,7 +81,7 @@ module cg {
         
         if useGPU {
             //forall (i, j) in Domain.expand(-halo_depth) {
-            forall oneDIdx in reduced_OneD {
+            foreach oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*p[i, j]
@@ -121,7 +117,7 @@ module cg {
 
         if useGPU {
             //forall (i, j) in Domain.expand(-halo_depth) {
-            forall oneDIdx in reduced_OneD {
+            foreach oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 u[i, j] += alpha * p[i, j];
                 r[i, j] -= alpha * w[i, j];
