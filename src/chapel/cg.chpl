@@ -20,10 +20,11 @@ module cg {
 
         startProfiling("cg_init");
 
-        foreach ij in Domain {
+        forall ij in Domain {
             p[ij] = 0;
             r[ij] = 0;
             u[ij] = energy[ij] *density[ij];
+            w[ij] = if (coefficient == CONDUCTIVITY) then density[ij] else 1.0/density[ij];
         }
         
         forall (i, j) in Domain.expand(-1) {
