@@ -58,7 +58,8 @@ module jacobi_driver {
             // halo_update_driver(chunk_var, setting_var, 1);
             
             calculate_residual(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, 
-                                chunk_var.kx, chunk_var.ky);
+                                chunk_var.kx, chunk_var.ky,
+                                chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
             
             calculate_2norm(setting_var.halo_depth, chunk_var.r, err);
         }

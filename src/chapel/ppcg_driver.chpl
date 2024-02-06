@@ -68,7 +68,7 @@ module ppcg_driver{
     proc ppcg_init_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, ref rro: real){
         
         calculate_residual(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, chunk_var.kx, 
-                            chunk_var.ky);
+                            chunk_var.ky, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         reset_fields_to_exchange(setting_var);
         setting_var.fields_to_exchange[FIELD_P] = true;

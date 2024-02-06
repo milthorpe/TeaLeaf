@@ -11,7 +11,8 @@ module solve_finish_driver {
 
         if setting_var.check_result {
             calculate_residual(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, 
-                                chunk_var.kx, chunk_var.ky);
+                                chunk_var.kx, chunk_var.ky,
+                                chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
             calculate_2norm(setting_var.halo_depth, chunk_var.r, exact_error);
             

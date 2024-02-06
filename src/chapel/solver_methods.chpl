@@ -19,10 +19,13 @@ module solver_methods {
 
     // Calculates the current value of r
     proc calculate_residual(const in halo_depth: int, const ref u: [?Domain] real, const ref u0: [Domain] real, 
-                            ref r: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real) {
+                            ref r: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real,
+                        const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1)) {
         startProfiling("calculate_residual");
 
-        forall (i, j) in Domain.expand(-halo_depth) {
+        //forall (i, j) in Domain.expand(-halo_depth) {
+        forall oneDIdx in reduced_OneD {
+            const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
             const smvp: real = (1.0 + ((kx[i+1, j]+kx[i, j])
                 + (ky[i, j+1]+ky[i, j])))*u[i, j]
                 - ((kx[i+1, j]*u[i+1, j])+(kx[i, j]*u[i-1, j]))
@@ -43,7 +46,7 @@ module solver_methods {
         const innerDomain = buffer_domain.expand(-halo_depth);
 
         if useGPU {
-            forall ij in innerDomain {
+            foreach ij in innerDomain {
                 buffer[ij] = buffer[ij] ** 2;
             } 
         
