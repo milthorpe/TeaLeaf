@@ -46,7 +46,7 @@ module solver_methods {
         const innerDomain = buffer_domain.expand(-halo_depth);
 
         if useGPU {
-            foreach ij in innerDomain {
+            forall ij in innerDomain {
                 buffer[ij] = buffer[ij] ** 2;
             } 
         

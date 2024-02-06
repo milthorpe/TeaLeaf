@@ -22,7 +22,7 @@ module cg {
         startProfiling("cg_init");
 
         //foreach ij in Domain {
-        foreach oneDIdx in OneD {
+        forall oneDIdx in OneD {
             const ij = local_domain.orderToIndex(oneDIdx);
             p[ij] = 0;
             r[ij] = 0;
@@ -40,7 +40,7 @@ module cg {
          
         if useGPU then {  // GPU version of Loop
             //forall (i, j) in Domain.expand(-halo_depth) {
-            foreach oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*u[i, j]
@@ -81,7 +81,7 @@ module cg {
         
         if useGPU {
             //forall (i, j) in Domain.expand(-halo_depth) {
-            foreach oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*p[i, j]
@@ -117,7 +117,7 @@ module cg {
 
         if useGPU {
             //forall (i, j) in Domain.expand(-halo_depth) {
-            foreach oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD {
                 const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
                 u[i, j] += alpha * p[i, j];
                 r[i, j] -= alpha * w[i, j];
@@ -148,7 +148,7 @@ module cg {
         startProfiling("cg_calc_p");
         
         if useGPU {
-            foreach oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD {
                 const ij = reduced_local_domain.orderToIndex(oneDIdx);
                 p[ij] = beta * p[ij] + r[ij];
             }

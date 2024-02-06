@@ -23,7 +23,7 @@ module field_summary {
             tempIe: [reduced_local_domain] real = noinit,
             tempTemp: [reduced_local_domain] real = noinit;
 
-            foreach oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD {
                 const ij = reduced_local_domain.orderToIndex(oneDIdx);
                 var cellMass: real;
                 tempVol[ij] = volume[ij];
