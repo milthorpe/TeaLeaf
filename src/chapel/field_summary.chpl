@@ -13,17 +13,18 @@ module field_summary {
     proc field_summary (const ref halo_depth: int, const ref volume: [?Domain] real,
                         const ref density: [Domain] real, const ref energy0: [Domain] real, 
                         const ref u: [Domain] real, ref vol: real, ref mass: real, 
-                        ref ie: real, ref temp: real) {
+                        ref ie: real, ref temp: real,
+                        const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1)) {
         startProfiling("field_summary");
 
         if useGPU {
-            const innerDomain = Domain.expand(-halo_depth);
-            var tempVol: [innerDomain] real = noinit, 
-            tempMass: [innerDomain] real = noinit,
-            tempIe: [innerDomain] real = noinit,
-            tempTemp: [innerDomain] real = noinit;
+            var tempVol: [reduced_local_domain] real = noinit, 
+            tempMass: [reduced_local_domain] real = noinit,
+            tempIe: [reduced_local_domain] real = noinit,
+            tempTemp: [reduced_local_domain] real = noinit;
 
-            forall ij in innerDomain {
+            foreach oneDIdx in reduced_OneD {
+                const ij = reduced_local_domain.orderToIndex(oneDIdx);
                 var cellMass: real;
                 tempVol[ij] = volume[ij];
                 cellMass = volume[ij] * density[ij];
@@ -42,7 +43,7 @@ module field_summary {
             localIe = 0.0,
             localTemp = 0.0;
         
-            forall ij in Domain.expand(-halo_depth) with (+ reduce localVol, + reduce localMass, + reduce localIe, + reduce localTemp) {
+            forall ij in reduced_local_domain with (+ reduce localVol, + reduce localMass, + reduce localIe, + reduce localTemp) {
                 var cellMass: real;
                 localVol += volume[ij];
                 cellMass = volume[ij] * density[ij];
@@ -70,7 +71,7 @@ module field_summary {
         var vol, ie, temp, mass : real;
 
         field_summary(setting_var.halo_depth, chunk_var.volume, 
-        chunk_var.density, chunk_var.energy0, chunk_var.u, vol, mass, ie, temp);
+        chunk_var.density, chunk_var.energy0, chunk_var.u, vol, mass, ie, temp, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         if (setting_var.check_result && is_solve_finished) { 
             var checking_value : real;
