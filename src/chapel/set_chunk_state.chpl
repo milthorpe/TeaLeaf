@@ -34,8 +34,10 @@ module set_chunk_state{
             states[ss].x_max -= (setting_var.dx/100.0);
             states[ss].y_max -= (setting_var.dy/100.0);
 
-            for (kk, jj) in {0..<chunk_var.y, 0..<chunk_var.x} {
-                
+            ref energy0 = chunk_var.energy0;
+            ref density = chunk_var.density;
+
+            forall (kk, jj) in chunk_var.Domain {    
                 var apply_state: bool = false;
 
                 if states[ss].geometry == settings.Geometry.RECTANGULAR {
@@ -64,8 +66,8 @@ module set_chunk_state{
 
                 if apply_state {
                     // Note: reversed kk and jj to match output from reference code
-                    chunk_var.energy0[kk, jj] = states[ss].energy;  
-                    chunk_var.density[kk, jj] = states[ss].density;
+                    energy0[kk, jj] = states[ss].energy;  
+                    density[kk, jj] = states[ss].density;
                 }
             }
         }
