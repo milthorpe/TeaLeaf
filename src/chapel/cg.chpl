@@ -55,7 +55,7 @@ module cg {
             rro = gpuSumReduce(temp);
         } else { // CPU version
             var rro_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rro_temp) {
+            forall (i, j) in reduced_local_domain with (+ reduce rro_temp) {
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*u[i, j]
                     - (kx[i+1, j]*u[i+1, j]+kx[i, j]*u[i-1, j])
@@ -93,7 +93,7 @@ module cg {
             pw = gpuSumReduce(temp);
         } else {
             var pw_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce pw_temp) {
+            forall (i, j) in reduced_local_domain with (+ reduce pw_temp) {
                 const smvp = (1.0 + (kx[i+1, j]+kx[i, j])
                     + (ky[i, j+1]+ky[i, j]))*p[i, j]
                     - (kx[i+1, j]*p[i+1, j]+kx[i, j]*p[i-1, j])
@@ -129,7 +129,7 @@ module cg {
             rrn = gpuSumReduce(temp);
         } else {
             var rrn_temp : real;
-            forall (i, j) in Domain.expand(-halo_depth) with (+ reduce rrn_temp) {
+            forall (i, j) in reduced_local_domain with (+ reduce rrn_temp) {
                 u[i, j] += alpha * p[i, j];
                 r[i, j] -= alpha * w[i, j];
                 
@@ -153,7 +153,7 @@ module cg {
                 p[ij] = beta * p[ij] + r[ij];
             }
         } else {
-            [ij in Domain.expand(-halo_depth)] p[ij] = beta * p[ij] + r[ij];
+            [ij in reduced_local_domain] p[ij] = beta * p[ij] + r[ij];
         }
 
         stopProfiling("cg_calc_p");

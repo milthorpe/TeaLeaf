@@ -84,7 +84,7 @@ module jacobi {
             error = gpuSumReduce(temp);
         } else {
             var err: real = 0.0;
-            forall ij in Domain.expand(-halo_depth) with (+ reduce err) {
+            forall ij in reduced_local_domain with (+ reduce err) {
                 const stencil : real = (u0[ij] 
                                             + kx[ij + east] * r[ij + east] 
                                             + kx[ij] * r[ij + west]
