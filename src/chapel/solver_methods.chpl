@@ -18,9 +18,9 @@ module solver_methods {
     }
 
     // Calculates the current value of r
-    proc calculate_residual(const in halo_depth: int, const ref u: [?Domain] real, const ref u0: [Domain] real, 
+    proc calculate_residual(const in halo_depth: int(32), const ref u: [?Domain] real, const ref u0: [Domain] real, 
                             ref r: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real,
-                        const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1)) {
+                        const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("calculate_residual");
 
         //forall (i, j) in Domain.expand(-halo_depth) {
@@ -38,7 +38,7 @@ module solver_methods {
     }
 
     // Calculates the 2 norm of a given buffer
-    proc calculate_2norm (const in halo_depth: int, ref buffer: [?buffer_domain] real, ref norm: real) {
+    proc calculate_2norm (const in halo_depth: int(32), ref buffer: [?buffer_domain] real, ref norm: real) {
         startProfiling("calculate_2norm");
 
         var norm_temp: real;
@@ -61,7 +61,7 @@ module solver_methods {
     }
 
     // Finalises the solution
-    proc finalise (const in x: int, const in y: int, const in halo_depth: int, ref energy: [?Domain] real, 
+    proc finalise(const in x: int(32), const in y: int(32), const in halo_depth: int(32), ref energy: [?Domain] real, 
                     const ref density: [Domain] real, const ref u: [Domain] real) {
         startProfiling("finalise");
 

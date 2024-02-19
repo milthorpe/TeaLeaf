@@ -8,11 +8,11 @@ module cg {
     use chunks;
     use GPU;
 
-    proc cg_init(const in x: int, const in y : int, const in halo_depth: int, const in coefficient: int, const in rx: real, 
+    proc cg_init(const in x: int(32), const in y: int(32), const in halo_depth: int(32), const in coefficient: int, const in rx: real, 
                 const in ry: real, out rro: real, const ref density: [?Domain] real, const ref energy: [Domain] real,
                 ref u: [Domain] real,  ref p: [Domain] real,  ref r: [Domain] real,  ref w: [Domain] real,  
                 ref kx: [Domain] real, ref ky: [Domain] real, ref temp: [Domain] real,
-                const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1), const ref local_domain: subdomain(Domain), const ref OneD : domain(1)) {
+                const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
 
         if coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY {
             writeln("Coefficient ", coefficient, " is not valid.\n");
@@ -73,9 +73,9 @@ module cg {
     }
 
     // Calculates w
-    proc cg_calc_w (const in halo_depth: int, out pw: real, const ref p: [?Domain] real, 
+    proc cg_calc_w (const in halo_depth: int(32), out pw: real, const ref p: [?Domain] real, 
                     ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1), const ref local_domain: subdomain(Domain), const ref OneD : domain(1)) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
 
         startProfiling("cg_calc_w");
         
@@ -109,32 +109,27 @@ module cg {
     }
     
     // Calculates u and r
-    proc cg_calc_ur(const in halo_depth: int, const in alpha: real, out rrn: real, 
+    proc cg_calc_ur(const in halo_depth: int(32), const in alpha: real, out rrn: real, 
                     ref u: [?Domain] real, const ref p: [Domain] real, 
                     ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1), const ref local_domain: subdomain(Domain), const ref OneD : domain(1)) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
         startProfiling("cg_calc_ur");
 
         if useGPU {
             //forall (i, j) in Domain.expand(-halo_depth) {
             forall oneDIdx in reduced_OneD {
-                const (i,j) = reduced_local_domain.orderToIndex(oneDIdx);
-                u[i, j] += alpha * p[i, j];
-                r[i, j] -= alpha * w[i, j];
-                
-                const internal_temp: real = r[i, j];
-                temp[i, j] = internal_temp ** 2;
-
+                const ij = reduced_local_domain.orderToIndex(oneDIdx);
+                u[ij] += alpha * p[ij];
+                r[ij] -= alpha * w[ij];
+                temp[ij] = r[ij] ** 2;
             }
             rrn = gpuSumReduce(temp);
         } else {
             var rrn_temp : real;
-            forall (i, j) in reduced_local_domain with (+ reduce rrn_temp) {
-                u[i, j] += alpha * p[i, j];
-                r[i, j] -= alpha * w[i, j];
-                
-                const internal_temp: real = r[i, j];
-                rrn_temp += internal_temp ** 2;
+            forall ij in reduced_local_domain with (+ reduce rrn_temp) {
+                u[ij] += alpha * p[ij];
+                r[ij] -= alpha * w[ij];
+                rrn_temp += r[ij] ** 2;
             }
             rrn += rrn_temp;
         }
@@ -142,9 +137,9 @@ module cg {
     }
 
     // Calculates p
-    proc cg_calc_p (const in halo_depth: int, const in beta: real, ref p: [?Domain] real, 
+    proc cg_calc_p (const in halo_depth: int(32), const in beta: real, ref p: [?Domain] real, 
                     const ref r: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD : domain(1), const ref local_domain: subdomain(Domain), const ref OneD : domain(1)) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
         startProfiling("cg_calc_p");
         
         if useGPU {

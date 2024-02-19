@@ -4,7 +4,7 @@ module local_halos {
     use profile;
 
     // Invoke the halo update kernels using driver
-    proc halo_update_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const in depth: int) {
+    proc halo_update_driver (ref chunk_var: chunks.Chunk, ref setting_var: settings.setting, const in depth: int(32)) {
         startProfiling("halo_update_driver");
 
         if is_fields_to_exchange(setting_var) {
@@ -16,7 +16,7 @@ module local_halos {
     }
 
     // The kernel for updating halos locally
-    proc local_halos(const in x: int, const in y: int, const in depth: int, const in halo_depth: int,
+    proc local_halos(const in x: int(32), const in y: int(32), const in depth: int(32), const in halo_depth: int(32),
         const ref fields_to_exchange: [0..<NUM_FIELDS] bool, ref density: [?D] real, ref energy0: [D] real,
         ref energy: [D] real, ref u: [D] real, ref p: [D] real, ref sd: [D] real) {
         
@@ -34,7 +34,7 @@ module local_halos {
     }
 
     // Updates faces in turn.
-    proc update_face (const in x: int, const in y: int, const in halo_depth: int, const in depth: int, ref buffer: [?D] real) {
+    proc update_face (const in x: int(32), const in y: int(32), const in halo_depth: int(32), const in depth: int(32), ref buffer: [?D] real) {
         if useGPU {
             const west_domain = D[halo_depth..<y-halo_depth, 0..<depth]; // west side of global halo
             foreach oneDIdx in 0..#west_domain.size {

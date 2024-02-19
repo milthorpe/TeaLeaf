@@ -160,10 +160,10 @@ module parse_config {
                         setting_var.grid_y_max = value : real;
                         continue;
                     } else if key.find("x_cells") >= 0 {
-                        setting_var.grid_x_cells = value : int;
+                        setting_var.grid_x_cells = value : int(32);
                         continue;
                     } else if key.find("y_cells") >= 0 {
-                        setting_var.grid_y_cells = value : int;
+                        setting_var.grid_y_cells = value : int(32);
                         continue;
                     } else if key.find("initial_timestep") >= 0 {
                         setting_var.dt_init = value : real;
@@ -193,7 +193,7 @@ module parse_config {
                         setting_var.eps = value : real;
                         continue;
                     } else if key.find("halo_depth") >= 0 {
-                        setting_var.halo_depth = value : int;
+                        setting_var.halo_depth = value : int(32);
                         continue;
                     } else {  // If file is not formatted properly
                         // writeln("Warning: unrecognized line ", counter, ": ", line);
