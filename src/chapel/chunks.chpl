@@ -14,14 +14,14 @@ module chunks {
   var global_halo_depth: int(32);
   var global_dt_init: real;
 
-  record Chunk {
-    proc init(const ref setting_var: settings.setting) {
-      global_halo_depth = setting_var.halo_depth;
-      global_x = setting_var.grid_x_cells;
-      global_y = setting_var.grid_y_cells;
-      global_dt_init = setting_var.dt_init;
-    }
+  proc set_var(const ref setting_var: settings.setting) {
+    global_halo_depth = setting_var.halo_depth;
+    global_x = setting_var.grid_x_cells;
+    global_y = setting_var.grid_y_cells;
+    global_dt_init = setting_var.dt_init;
+  }
 
+  record Chunk {
     var halo_depth = global_halo_depth;
     var x_inner = global_x;
     var y_inner = global_y;
