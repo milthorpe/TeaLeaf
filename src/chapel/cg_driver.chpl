@@ -49,8 +49,8 @@ module cg_driver {
                                 ref rro: real, ref error: real) {
         var pw: real;
         
-        cg_calc_w (setting_var.halo_depth, pw, chunk_var.p, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp,
-            chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
+        cg_calc_w(pw, chunk_var.p, chunk_var.w, chunk_var.kx, chunk_var.ky, chunk_var.temp,
+            chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         const alpha = rro / pw;
         
@@ -58,13 +58,13 @@ module cg_driver {
     
         chunk_var.cg_alphas[tt] = alpha;
 
-        cg_calc_ur(setting_var.halo_depth, alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.temp,
-            chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
+        cg_calc_ur(alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, chunk_var.w, chunk_var.temp,
+            chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         const beta : real = rrn / rro;
         
         chunk_var.cg_betas[tt] = beta;
-        cg_calc_p (setting_var.halo_depth, beta, chunk_var.p, chunk_var.r, chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
+        cg_calc_p(beta, chunk_var.p, chunk_var.r, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
         error = rrn;
         rro = rrn;
     }

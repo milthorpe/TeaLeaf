@@ -52,7 +52,7 @@ module jacobi {
     }
 
     // The main Jacobi solve step
-    proc jacobi_iterate(const in halo_depth: int(32), ref u: [?Domain] real, const ref u0: [Domain] real, 
+    proc jacobi_iterate(ref u: [?Domain] real, const ref u0: [Domain] real, 
                         ref r: [Domain] real, out error: real, const ref kx: [Domain] real, 
                         const ref ky: [Domain] real, ref temp: [Domain] real,
                         const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {

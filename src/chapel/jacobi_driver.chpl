@@ -50,7 +50,7 @@ module jacobi_driver {
     proc jacobi_main_step_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
                                     const in tt: int, out err: real) {
 
-        jacobi_iterate(setting_var.halo_depth, chunk_var.u, chunk_var.u0, chunk_var.r, err, 
+        jacobi_iterate(chunk_var.u, chunk_var.u0, chunk_var.r, err, 
                         chunk_var.kx, chunk_var.ky, chunk_var.temp,
                         chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
         if tt % 50 == 0 {

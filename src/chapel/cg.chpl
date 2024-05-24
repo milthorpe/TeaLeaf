@@ -73,9 +73,9 @@ module cg {
     }
 
     // Calculates w
-    proc cg_calc_w (const in halo_depth: int(32), out pw: real, const ref p: [?Domain] real, 
+    proc cg_calc_w (out pw: real, const ref p: [?Domain] real, 
                     ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
 
         startProfiling("cg_calc_w");
         
@@ -109,10 +109,10 @@ module cg {
     }
     
     // Calculates u and r
-    proc cg_calc_ur(const in halo_depth: int(32), const in alpha: real, out rrn: real, 
+    proc cg_calc_ur(const in alpha: real, out rrn: real, 
                     ref u: [?Domain] real, const ref p: [Domain] real, 
                     ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("cg_calc_ur");
 
         if useGPU {
@@ -137,9 +137,9 @@ module cg {
     }
 
     // Calculates p
-    proc cg_calc_p (const in halo_depth: int(32), const in beta: real, ref p: [?Domain] real, 
+    proc cg_calc_p (const in beta: real, ref p: [?Domain] real, 
                     const ref r: [Domain] real,
-                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
+                    const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("cg_calc_p");
         
         if useGPU {
