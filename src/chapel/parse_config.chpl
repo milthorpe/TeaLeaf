@@ -10,7 +10,7 @@ module parse_config {
 
         try {
             var tea_in = open (setting_var.tea_in_filename, ioMode.r); // open file
-            var tea_in_reader = tea_in.reader(); // read file
+            var tea_in_reader = tea_in.reader(locking=false); // read file
 
             
             var line: string;
@@ -47,7 +47,7 @@ module parse_config {
         // Open the configuration file
         try {
             var tea_in = open (setting_var.tea_in_filename, ioMode.r);
-            var tea_in_reader = tea_in.reader();
+            var tea_in_reader = tea_in.reader(locking=false);
             var line: string;
             var counter : int; // fine line number
             // state variables
