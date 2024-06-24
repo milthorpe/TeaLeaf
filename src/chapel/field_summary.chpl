@@ -91,7 +91,7 @@ module field_summary {
         var counter : int;
         try {
             var tea_prob = open (setting_var.test_problem_filename, ioMode.r);
-            var tea_prob_reader = tea_prob.reader();
+            var tea_prob_reader = tea_prob.reader(locking=false);
             
             var x : int;
             var y : int;
