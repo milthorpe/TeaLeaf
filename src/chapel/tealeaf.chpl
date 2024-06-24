@@ -54,7 +54,8 @@ module main {
             read_config(setting_var, states);
             
             // Create array of records of chunks and initialise
-            var chunk_var: chunks.Chunk = new Chunk(setting_var);
+            set_var(setting_var);
+            var chunk_var = new Chunk();
 
             initialise_application(chunk_var, setting_var, states);
 
