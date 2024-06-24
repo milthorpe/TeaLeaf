@@ -8,7 +8,7 @@ module cheby {
     use chunks;
     use GPU;
 
-    proc cheby_calc_u(const ref halo_depth: int, ref u: [?Domain] real, const ref p: [Domain] real) {
+    proc cheby_calc_u(const ref halo_depth: int(32), ref u: [?Domain] real, const ref p: [Domain] real) {
         startProfiling("cheby_calc_u");
         
         forall ij in Domain.expand(-halo_depth) { 
@@ -19,7 +19,7 @@ module cheby {
     }
 
     // Initialises the Chebyshev solver
-    proc cheby_init(const ref halo_depth: int, const ref theta: real, ref u: [?Domain] real, 
+    proc cheby_init(const ref halo_depth: int(32), const ref theta: real, ref u: [?Domain] real, 
                     const ref u0: [Domain] real, ref p: [Domain] real, ref r: [Domain] real,
                     ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real) {
         startProfiling("cheby_init");
@@ -39,7 +39,7 @@ module cheby {
     }
 
     // The main chebyshev iteration
-    proc cheby_iterate(const ref halo_depth: int, const ref alpha: real, const ref beta: real,
+    proc cheby_iterate(const ref halo_depth: int(32), const ref alpha: real, const ref beta: real,
                        ref u: [?Domain] real, const ref u0: [Domain] real, ref p: [Domain] real, ref r: [Domain] real,
                        ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real) {
         startProfiling("cheby_iterate");

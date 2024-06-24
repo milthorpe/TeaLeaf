@@ -8,7 +8,7 @@ module cg {
     use chunks;
     use GPU;
 
-    proc cg_init(const in x: int, const in y : int, const in halo_depth: int, const in coefficient: int, const in rx: real, 
+    proc cg_init(const in x: int(32), const in y : int(32), const in halo_depth: int(32), const in coefficient: int, const in rx: real, 
                 const in ry: real, out rro: real, const ref density: [?Domain] real, const ref energy: [Domain] real,
                 ref u: [Domain] real,  ref p: [Domain] real,  ref r: [Domain] real,  ref w: [Domain] real,  
                 ref kx: [Domain] real, ref ky: [Domain] real, ref temp: [Domain] real) {
@@ -73,7 +73,7 @@ module cg {
     }
 
     // Calculates w
-    proc cg_calc_w (const in halo_depth: int, out pw: real, const ref p: [?Domain] real, 
+    proc cg_calc_w (const in halo_depth: int(32), out pw: real, const ref p: [?Domain] real, 
                     ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real) {
 
         startProfiling("cg_calc_w");
@@ -106,7 +106,7 @@ module cg {
     }
     
     // Calculates u and r
-    proc cg_calc_ur(const in halo_depth: int, const in alpha: real, out rrn: real, 
+    proc cg_calc_ur(const in halo_depth: int(32), const in alpha: real, out rrn: real, 
                     ref u: [?Domain] real, const ref p: [Domain] real, 
                     ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real) {
         startProfiling("cg_calc_ur");
@@ -136,7 +136,7 @@ module cg {
     }
 
     // Calculates p
-    proc cg_calc_p (const in halo_depth: int, const in beta: real, ref p: [?Domain] real, 
+    proc cg_calc_p (const in halo_depth: int(32), const in beta: real, ref p: [?Domain] real, 
                     const ref r: [Domain] real) {
         startProfiling("cg_calc_p");
         

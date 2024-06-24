@@ -1,7 +1,6 @@
 module settings{
   // Global constants
   param NUM_FIELDS: int = 6;
-  param MASTER: int = 0;
   param NUM_FACES: int = 4;
 
   param FIELD_DENSITY: int = 0;
@@ -26,8 +25,8 @@ module settings{
     var grid_y_min: real;
     var grid_x_max: real;
     var grid_y_max: real;
-    var grid_x_cells: int;
-    var grid_y_cells: int;
+    var grid_x_cells: int(32);
+    var grid_y_cells: int(32);
     var dt_init: real;
     var max_iters: int;
     var eps: real;
@@ -43,7 +42,7 @@ module settings{
     var ppcg_inner_steps: int;
     var preconditioner: bool;
     var num_states: int;
-    var halo_depth: int;
+    var halo_depth: int(32);
     var is_offload: bool;
     var fields_to_exchange: [0..<NUM_FIELDS] bool;
     var solver: Solver;

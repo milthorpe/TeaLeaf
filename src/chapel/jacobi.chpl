@@ -9,7 +9,7 @@ module jacobi {
     use GPU;
 
     // Initialises the Jacobi solver
-    proc jacobi_init(const in x: int, const in y: int, const in halo_depth: int, const in coefficient: real, 
+    proc jacobi_init(const in x: int(32), const in y: int(32), const in halo_depth: int(32), const in coefficient: real, 
                     const in rx: real, const in ry: real, ref u: [?Domain] real, ref u0: [Domain] real, 
                     const ref energy: [Domain] real, const ref density: [Domain] real, ref kx: [Domain] real, 
                     ref ky: [Domain] real) {
@@ -52,7 +52,7 @@ module jacobi {
     }
 
     // The main Jacobi solve step
-    proc jacobi_iterate(const in halo_depth: int, ref u: [?Domain] real, const ref u0: [Domain] real, 
+    proc jacobi_iterate(const in halo_depth: int(32), ref u: [?Domain] real, const ref u0: [Domain] real, 
                         ref r: [Domain] real, out error: real, const ref kx: [Domain] real, 
                         const ref ky: [Domain] real, ref temp: [Domain] real) {
 
@@ -60,7 +60,9 @@ module jacobi {
             r[i,j] = u[i,j];
         }
 
-        const north = (1,0), south = (-1,0), east = (0,1), west = (0,-1);
+        param ONE = 1.0:int(32);
+        param ZERO = 0.0:int(32);
+        const north = (ONE,ZERO), south = (-ONE,ZERO), east = (ZERO,ONE), west = (ZERO,-ONE);
         
         if useGPU {
             forall ij in Domain.expand(-halo_depth) {

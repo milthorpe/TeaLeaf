@@ -10,7 +10,7 @@ module field_summary {
     * 		Calculates aggregates of values in field.
     */	
     // The field summary kernel
-    proc field_summary (const ref halo_depth: int, const ref volume: [?Domain] real,
+    proc field_summary (const ref halo_depth: int(32), const ref volume: [?Domain] real,
                         const ref density: [Domain] real, const ref energy0: [Domain] real, 
                         const ref u: [Domain] real, ref vol: real, ref mass: real, 
                         ref ie: real, ref temp: real) {
