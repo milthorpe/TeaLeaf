@@ -4,8 +4,6 @@ module chunks {
   use StencilDist;
   use BlockDist;
 
-  const num_face_domain = {-1..<NUM_FACES, -1..<NUM_FACES};
-
   // Set as True if using multilocale
   config param useStencilDist = false;
   config param useBlockDist = false;
@@ -59,7 +57,6 @@ module chunks {
     var top: int;
     
     var dt_init: real = global_dt_init;
-    var neighbours: [num_face_domain] (int, int) = noinit;
     var density: [Domain] real = noinit; 
     var density0: [Domain] real = noinit;
     var energy: [Domain] real = noinit;
