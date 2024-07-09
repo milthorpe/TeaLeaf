@@ -30,7 +30,7 @@ endif
 else
 # CPU version
 ifdef CHPL_GPU
-$(error CHPL_GPU is set, but CHPL_LOCALE_MODEL!= gpu)
+$(error CHPL_GPU is set, but CHPL_LOCALE_MODEL!= gpu! CHPL_LOCALE_MODEL==$(CHPL_LOCALE_MODEL))
 endif
 endif
 CHPL_FLAGS+=--fast --no-ieee-float# --llvm-remarks=vector
