@@ -17,32 +17,21 @@ module field_summary {
                         const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("field_summary");
 
+        var localVol = 0.0,
+        localMass = 0.0,
+        localIe = 0.0,
+        localTemp = 0.0;
         if useGPU {
-            var tempVol: [reduced_local_domain] real = noinit, 
-            tempMass: [reduced_local_domain] real = noinit,
-            tempIe: [reduced_local_domain] real = noinit,
-            tempTemp: [reduced_local_domain] real = noinit;
-
-            forall oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD with (+ reduce localVol, + reduce localMass, + reduce localIe, + reduce localTemp) {
                 const ij = reduced_local_domain.orderToIndex(oneDIdx);
                 var cellMass: real;
-                tempVol[ij] = volume[ij];
+                localVol += volume[ij];
                 cellMass = volume[ij] * density[ij];
-                tempMass[ij] = cellMass;
-                tempIe[ij] = cellMass * energy0[ij];
-                tempTemp[ij] = cellMass * u[ij];
+                localMass += cellMass;
+                localIe += cellMass * energy0[ij];
+                localTemp += cellMass * u[ij];
             }
-
-            vol = gpuSumReduce(tempVol);
-            mass = gpuSumReduce(tempMass);
-            ie = gpuSumReduce(tempIe);
-            temp = gpuSumReduce(tempTemp);
-        } else {
-            var localVol = 0.0,
-            localMass = 0.0,
-            localIe = 0.0,
-            localTemp = 0.0;
-        
+        } else {      
             forall ij in reduced_local_domain with (+ reduce localVol, + reduce localMass, + reduce localIe, + reduce localTemp) {
                 var cellMass: real;
                 localVol += volume[ij];
@@ -51,12 +40,11 @@ module field_summary {
                 localIe += cellMass * energy0[ij];
                 localTemp += cellMass * u[ij];
             }
-            
-            vol = localVol;
-            mass = localMass;
-            ie = localIe;
-            temp = localTemp;
         }
+        vol = localVol;
+        mass = localMass;
+        ie = localIe;
+        temp = localTemp;
         stopProfiling("field_summary");
     }
 

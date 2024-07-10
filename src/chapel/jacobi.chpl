@@ -66,10 +66,11 @@ module jacobi {
         param ONE = 1.0:int(32);
         param ZERO = 0.0:int(32);
         const north = (ONE,ZERO), south = (-ONE,ZERO), east = (ZERO,ONE), west = (ZERO,-ONE);
-        
+
+        var err: real = 0.0;
         if useGPU {
             //forall ij in Domain.expand(-halo_depth) {
-            forall oneDIdx in reduced_OneD {
+            forall oneDIdx in reduced_OneD with (+ reduce err) {
                 const ij = reduced_local_domain.orderToIndex(oneDIdx);
                 const stencil : real = (u0[ij] 
                                             + kx[ij + east] * r[ij + east] 
@@ -80,12 +81,10 @@ module jacobi {
                                             + ky[ij] + ky[ij + north]);
                 u[ij] = stencil;
 
-                temp[ij] = abs(u[ij] - r[ij]);
+                err += abs(u[ij] - r[ij]);
             }
-            
-            error = gpuSumReduce(temp);
+
         } else {
-            var err: real = 0.0;
             forall ij in reduced_local_domain with (+ reduce err) {
                 const stencil : real = (u0[ij] 
                                             + kx[ij + east] * r[ij + east] 
@@ -98,7 +97,7 @@ module jacobi {
 
                 err += abs(stencil - r[ij]);
             }
-            error = err;
         }
+        error = err;
     }
 }

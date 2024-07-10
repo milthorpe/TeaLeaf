@@ -41,21 +41,9 @@ module solver_methods {
     proc calculate_2norm (const in halo_depth: int(32), ref buffer: [?buffer_domain] real, ref norm: real) {
         startProfiling("calculate_2norm");
 
-        var norm_temp: real;
-
         const innerDomain = buffer_domain.expand(-halo_depth);
 
-        if useGPU {
-            forall ij in innerDomain {
-                buffer[ij] = buffer[ij] ** 2;
-            } 
-        
-            norm_temp = gpuSumReduce(buffer[innerDomain]); // This causes a lot of transfers between host and device
-        
-        } else {
-            norm_temp = + reduce (buffer[innerDomain] ** 2);
-        }
-        norm = norm_temp;
+        norm = + reduce (buffer[innerDomain] ** 2);
 
         stopProfiling("calculate_2norm");
     }
