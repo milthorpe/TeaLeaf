@@ -36,7 +36,7 @@ endif
 CHPL_FLAGS+=--fast --no-ieee-float# --llvm-remarks=vector
 CUDACXX_FLAGS+=-O3
 ifdef DEBUG
-  CHPL_FLAGS+=-g --devel
+  CHPL_FLAGS+=-g
   CUDACXX_FLAGS=-g
 endif
 CHPL = chpl
