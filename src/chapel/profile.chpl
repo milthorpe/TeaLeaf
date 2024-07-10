@@ -38,12 +38,12 @@ module profile {
 
     proc startProfiling(name: string) {
         if enableProfiling then
-            profiler!.startTimer(name);
+            on profiler.locale do profiler!.startTimer(name);
     }
 
     proc stopProfiling(name: string) {
         if enableProfiling then
-            profiler!.stopTimer(name);
+            on profiler.locale do profiler!.stopTimer(name);
     }
 
     proc reportProfiling() {

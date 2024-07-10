@@ -24,6 +24,9 @@ module main {
         wallclock.start();
 
         const runLocale: locale = if useGPU then here.gpus[0] else here;
+
+        initProfiling(); // on host
+
         on runLocale {
             // Create the settings wrapper
             var setting_var = new setting();
@@ -43,16 +46,15 @@ module main {
             writef(" - Execution: %s\n", if useGPU then "Offload" else "Host");
             try! stdout.flush();
 
-            initProfiling();
-
             // Initialise states
             find_num_states(setting_var); 
+
             const states_domain = {0..<setting_var.num_states};
             var states: [states_domain] settings.state;
 
             // Read input files for state and setting information
             read_config(setting_var, states);
-            
+
             // Create array of records of chunks and initialise
             set_var(setting_var);
             var chunk_var = new Chunk();
@@ -60,9 +62,11 @@ module main {
             initialise_application(chunk_var, setting_var, states);
 
             diffuse(chunk_var, setting_var);
-            // Print the verbose profile summary
-            reportProfiling();
         }
+
+        // Print the verbose profile summary
+        reportProfiling();
+
         wallclock.stop();
         writeln("\nTotal time elapsed: ", wallclock.elapsed(), " seconds");   
     }
