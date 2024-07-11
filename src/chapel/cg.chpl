@@ -8,10 +8,10 @@ module cg {
     use chunks;
     use GPU;
 
-    proc cg_init(const in x: int(32), const in y: int(32), const in halo_depth: int(32), const in coefficient: int, const in rx: real, 
-                const in ry: real, out rro: real, const ref density: [?Domain] real, const ref energy: [Domain] real,
+    proc cg_init(x: int(32), y: int(32), halo_depth: int(32), coefficient: int, rx: real, 
+                ry: real, out rro: real, const ref density: [?Domain] real, const ref energy: [Domain] real,
                 ref u: [Domain] real,  ref p: [Domain] real,  ref r: [Domain] real,  ref w: [Domain] real,  
-                ref kx: [Domain] real, ref ky: [Domain] real, ref temp: [Domain] real,
+                ref kx: [Domain] real, ref ky: [Domain] real,
                 const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
 
         if coefficient != CONDUCTIVITY && coefficient != RECIP_CONDUCTIVITY {
@@ -73,7 +73,7 @@ module cg {
 
     // Calculates w
     proc cg_calc_w (out pw: real, const ref p: [?Domain] real, 
-                    ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real, ref temp: [Domain] real,
+                    ref w: [Domain] real, const ref kx: [Domain] real, const ref ky: [Domain] real,
                     const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
 
         startProfiling("cg_calc_w");
@@ -106,9 +106,9 @@ module cg {
     }
     
     // Calculates u and r
-    proc cg_calc_ur(const in alpha: real, out rrn: real, 
+    proc cg_calc_ur(alpha: real, out rrn: real, 
                     ref u: [?Domain] real, const ref p: [Domain] real, 
-                    ref r: [Domain] real, const ref w: [Domain] real, ref temp: [Domain] real,
+                    ref r: [Domain] real, const ref w: [Domain] real,
                     const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("cg_calc_ur");
 
@@ -133,8 +133,7 @@ module cg {
     }
 
     // Calculates p
-    proc cg_calc_p (const in beta: real, ref p: [?Domain] real, 
-                    const ref r: [Domain] real,
+    proc cg_calc_p(beta: real, ref p: [?Domain] real, const ref r: [Domain] real,
                     const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32))) {
         startProfiling("cg_calc_p");
         

@@ -8,7 +8,7 @@ module set_chunk_data{
 	use settings;
 	use chunks;
 	
-	proc set_chunk_data_driver(ref chunk_var: chunks.Chunk,  const ref setting_var : settings.setting){ 
+	proc set_chunk_data_driver(ref chunk_var: chunks.Chunk,  const ref setting_var: settings.setting) { 
 		const x_min: real = setting_var.grid_x_min + setting_var.dx * (chunk_var.left:real);
 		const y_min: real = setting_var.grid_y_min + setting_var.dy * (chunk_var.bottom:real);
 

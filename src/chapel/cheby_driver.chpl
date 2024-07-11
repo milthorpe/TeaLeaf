@@ -40,7 +40,7 @@ module cheby_driver{
 
             // Perform a CG iteration
             if (!is_switch_to_cheby) {
-                cg_main_step_driver(chunk_var, setting_var, tt, rro, error); 
+                cg_main_step_driver(chunk_var, tt, rro, error); 
             } else {
                 num_cheby_iters += 1;
                 // Check if first step
@@ -75,7 +75,7 @@ module cheby_driver{
     }
 
     proc cheby_init_driver(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
-                            const in num_cg_iters: int, ref bb: real) {
+                           num_cg_iters: int, ref bb: real) {
 
         eigenvalue_driver_initialise(chunk_var, setting_var, num_cg_iters);
         cheby_coef_driver(chunk_var, setting_var.max_iters - num_cg_iters);
@@ -93,8 +93,8 @@ module cheby_driver{
     }
 
     // Performs the main iteration step
-    proc cheby_main_step_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
-                                const in num_cheby_iters: int, const in is_calc_2norm: bool, ref error: real) {
+    proc cheby_main_step_driver(ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
+                                num_cheby_iters: int, is_calc_2norm: bool, ref error: real) {
         // chunks per rank loop
         cheby_iterate (setting_var.halo_depth, chunk_var.cheby_alphas[num_cheby_iters],
                        chunk_var.cheby_betas[num_cheby_iters], chunk_var.u, chunk_var.u0,
@@ -107,7 +107,7 @@ module cheby_driver{
     }
 
     // Calculates the estimated iterations for Chebyshev solver
-    proc cheby_calc_est_iterations (const ref chunk_var : chunks.Chunk, const in error: real, const in bb: real, 
+    proc cheby_calc_est_iterations(const ref chunk_var: chunks.Chunk, error: real, bb: real, 
                                     ref est_iterations: int) { 
 
          // Condition number is identical in all chunks/ranks
@@ -124,7 +124,7 @@ module cheby_driver{
     }
 
     // Calculates the Chebyshev coefficients for the chunk
-    proc cheby_coef_driver (ref chunk_var : chunks.Chunk, const in max_iters: int) {
+    proc cheby_coef_driver(ref chunk_var: chunks.Chunk, max_iters: int) {
         chunk_var.theta = (chunk_var.eigmax + chunk_var.eigmin) / 2.0;
         const delta : real = (chunk_var.eigmax - chunk_var.eigmin) / 2.0;
         const sigma : real = chunk_var.theta / delta;

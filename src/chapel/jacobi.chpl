@@ -9,10 +9,10 @@ module jacobi {
     use GPU;
 
     // Initialises the Jacobi solver
-    proc jacobi_init(const in x: int(32), const in y: int(32), const in halo_depth: int(32), const in coefficient: real, 
-                    const in rx: real, const in ry: real, ref u: [?Domain] real, ref u0: [Domain] real, 
-                    const ref energy: [Domain] real, const ref density: [Domain] real, ref kx: [Domain] real, 
-                    ref ky: [Domain] real) {
+    proc jacobi_init(x: int(32), y: int(32), halo_depth: int(32), coefficient: real, 
+                    rx: real, ry: real, ref u: [?Domain] real, ref u0: [Domain] real, 
+                    const ref energy: [Domain] real, const ref density: [Domain] real,
+                    ref kx: [Domain] real, ref ky: [Domain] real) {
         
         startProfiling("jacobi_init");
         const Inner = Domain[halo_depth..<y - 1, halo_depth..<x - 1];
@@ -54,7 +54,7 @@ module jacobi {
     // The main Jacobi solve step
     proc jacobi_iterate(ref u: [?Domain] real, const ref u0: [Domain] real, 
                         ref r: [Domain] real, out error: real, const ref kx: [Domain] real, 
-                        const ref ky: [Domain] real, ref temp: [Domain] real,
+                        const ref ky: [Domain] real,
                         const ref reduced_local_domain: subdomain(Domain), const ref reduced_OneD: domain(1,int(32)), const ref local_domain: subdomain(Domain), const ref OneD: domain(1,int(32))) {
 
         //forall (i, j) in Domain {

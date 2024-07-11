@@ -54,7 +54,7 @@ module field_summary {
 
     // Invokes the set chunk data kernel
     proc field_summary_driver(ref chunk_var: chunks.Chunk, const setting_var: settings.setting,
-        const in is_solve_finished: bool) {
+        is_solve_finished: bool) {
         
         var vol, ie, temp, mass : real;
 

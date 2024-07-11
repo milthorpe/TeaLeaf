@@ -6,8 +6,8 @@ module jacobi_driver {
     use jacobi;
 
     // Performs a full solve with the Jacobi solver kernels
-    proc jacobi_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const in rx: real,
-    const in ry: real, out err: real, out interation_count : int) {
+    proc jacobi_driver(ref chunk_var: chunks.Chunk, ref setting_var: settings.setting, rx: real,
+                       ry: real, out err: real, out interation_count: int) {
         
         jacobi_init_driver(chunk_var, setting_var, rx, ry);
         
@@ -21,8 +21,6 @@ module jacobi_driver {
             
             if(abs(err) < setting_var.eps) then break;
             tt_prime += 1;
-            
-            // writeln(getGpuDiagnostics());
         }
         
         interation_count = tt_prime;
@@ -31,13 +29,11 @@ module jacobi_driver {
     }
 
     // Invokes the CG initialisation kernels
-    proc jacobi_init_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, const in rx: real,
-    const in ry: real) {
-        // startGpuDiagnostics();
+    proc jacobi_init_driver(ref chunk_var: chunks.Chunk, ref setting_var: settings.setting, rx: real, ry: real) {
+
         jacobi_init(chunk_var.x, chunk_var.y, setting_var.halo_depth, setting_var.coefficient, rx, ry,
             chunk_var.u, chunk_var.u0, chunk_var.energy, chunk_var.density, chunk_var.kx, chunk_var.ky);
-        // stopGpuDiagnostics();
-        // writeln(getGpuDiagnostics());
+
         copy_u(setting_var.halo_depth, chunk_var.u, chunk_var.u0);
 
         // Need to update for the matvec
@@ -47,11 +43,11 @@ module jacobi_driver {
     }
 
     // Invokes the main Jacobi solve kernels
-    proc jacobi_main_step_driver (ref chunk_var: chunks.Chunk, const setting_var: settings.setting, 
-                                    const in tt: int, out err: real) {
+    proc jacobi_main_step_driver(ref chunk_var: chunks.Chunk, const setting_var: settings.setting, 
+                                 tt: int, out err: real) {
 
         jacobi_iterate(chunk_var.u, chunk_var.u0, chunk_var.r, err, 
-                        chunk_var.kx, chunk_var.ky, chunk_var.temp,
+                        chunk_var.kx, chunk_var.ky,
                         chunk_var.reduced_local_domain, chunk_var.reduced_OneD, chunk_var.local_Domain, chunk_var.OneD);
         if tt % 50 == 0 {
                         

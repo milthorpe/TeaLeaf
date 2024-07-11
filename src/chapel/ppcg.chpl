@@ -6,8 +6,7 @@ module ppcg {
     use chunks;
 
     // Initialises the PPCG solver
-    proc ppcg_init(const in halo_depth: int, const in theta: real, const ref r: [?Domain] real, 
-                    ref sd: [Domain] real) {
+    proc ppcg_init(halo_depth: int, theta: real, const ref r: [?Domain] real, ref sd: [Domain] real) {
         startProfiling("ppcg_init");
         
         forall ij in Domain.expand(-halo_depth) {
@@ -17,7 +16,7 @@ module ppcg {
         stopProfiling("ppcg_init");
     }
 
-    proc ppcg_inner_iteration (const in halo_depth: int, const in alpha: real, const in beta: real, ref u: [?Domain] real, 
+    proc ppcg_inner_iteration(halo_depth: int, alpha: real, beta: real, ref u: [?Domain] real, 
                                 ref r: [Domain] real, ref sd: [Domain] real, const ref kx: [Domain] real, 
                                 const ref ky: [Domain] real) {
         startProfiling("ppcg_inner_iteration");

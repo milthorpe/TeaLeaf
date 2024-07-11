@@ -57,7 +57,7 @@ module main {
 
             // Create array of records of chunks and initialise
             set_var(setting_var);
-            var chunk_var = new Chunk();
+            var chunk_var = new Chunk(setting_var.max_iters);
 
             initialise_application(chunk_var, setting_var, states);
 

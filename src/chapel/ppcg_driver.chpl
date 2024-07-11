@@ -36,7 +36,7 @@ module ppcg_driver{
 
             if is_switch_to_ppcg == 0 then
                 // Perform a CG iteration
-                cg_main_step_driver(chunk_var, setting_var, tt, rro, error);
+                cg_main_step_driver(chunk_var, tt, rro, error);
             else {
             
                 num_ppcg_iters += 1;
@@ -83,13 +83,13 @@ module ppcg_driver{
 
         var pw: real;
         cg_calc_w(pw, chunk_var.p, chunk_var.w, chunk_var.kx, 
-                  chunk_var.ky, chunk_var.temp, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
+                  chunk_var.ky, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         const alpha : real = rro / pw;
         var rrn : real = 0.0;
 
         cg_calc_ur(alpha, rrn, chunk_var.u, chunk_var.p, chunk_var.r, 
-                   chunk_var.w, chunk_var.temp, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
+                   chunk_var.w, chunk_var.reduced_local_domain, chunk_var.reduced_OneD);
 
         // Perform the inner iterations
         ppcg_inner_iterations(chunk_var, setting_var);

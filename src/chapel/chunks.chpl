@@ -44,7 +44,11 @@ module chunks {
     const y_domain = {0:int(32)..<y};
     const x1_domain = {0:int(32)..<x+1};
     const y1_domain = {0:int(32)..<y+1};
-    const max_iter_domain = {0:int(32)..<settings.max_iters};
+    const max_iter_domain: domain(1);
+
+    proc init(max_iters: int) {
+      max_iter_domain = {0..<max_iters};
+    }
   
     //TODO set up condition to make sure number of locales is only so big compared to grid size
     // if numLocales > (x * y) 
@@ -72,9 +76,7 @@ module chunks {
     var w: [Domain] real = noinit;
     var kx: [Domain] real = noinit;
     var ky: [Domain] real = noinit;
-    var sd: [Domain] real = noinit;
-    var temp: [reduced_local_domain] real = noinit;
-    
+    var sd: [Domain] real = noinit;    
 
     var cell_x: [x_domain] real = noinit;
     var cell_dx: [x_domain] real = noinit;
