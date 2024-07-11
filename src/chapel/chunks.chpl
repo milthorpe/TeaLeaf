@@ -22,12 +22,12 @@ module chunks {
   }
 
   record Chunk {
-    var halo_depth = global_halo_depth;
-    var x_inner = global_x;
-    var y_inner = global_y;
+    const halo_depth = global_halo_depth;
+    const x_inner = global_x;
+    const y_inner = global_y;
 
-    var x: int(32) = x_inner + halo_depth * 2;
-    var y: int(32) = y_inner + halo_depth * 2;
+    const x: int(32) = x_inner + halo_depth * 2;
+    const y: int(32) = y_inner + halo_depth * 2;
     
     // Domains
     const local_Domain = {0:int(32)..<y, 0:int(32)..<x};

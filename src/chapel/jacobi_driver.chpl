@@ -42,12 +42,12 @@ module jacobi_driver {
 
         // Need to update for the matvec
         
-        setting_var.fields_to_exchange[0..<NUM_FIELDS] = false;
+        reset_fields_to_exchange(setting_var);
         setting_var.fields_to_exchange[3] = true;
     }
 
     // Invokes the main Jacobi solve kernels
-    proc jacobi_main_step_driver (ref chunk_var : chunks.Chunk, ref setting_var : settings.setting, 
+    proc jacobi_main_step_driver (ref chunk_var: chunks.Chunk, const setting_var: settings.setting, 
                                     const in tt: int, out err: real) {
 
         jacobi_iterate(chunk_var.u, chunk_var.u0, chunk_var.r, err, 

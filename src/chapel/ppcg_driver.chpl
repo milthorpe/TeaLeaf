@@ -5,6 +5,7 @@ module ppcg_driver{
     use cg_driver;
     use cg;
     use local_halos;
+    use cheby_driver;
     use eigenvalue_driver;
     use solver_methods;
     use ppcg;

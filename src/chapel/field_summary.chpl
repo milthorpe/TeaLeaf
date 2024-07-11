@@ -53,7 +53,7 @@ module field_summary {
  */	
 
     // Invokes the set chunk data kernel
-    proc field_summary_driver(ref chunk_var :chunks.Chunk, ref setting_var : settings.setting,
+    proc field_summary_driver(ref chunk_var: chunks.Chunk, const setting_var: settings.setting,
         const in is_solve_finished: bool) {
         
         var vol, ie, temp, mass : real;
@@ -76,7 +76,7 @@ module field_summary {
     }
 
     // Fetches the checking value from the test problems file
-    proc get_checking_value (const ref setting_var : settings.setting, ref checking_value : real) {
+    proc get_checking_value (const setting_var: settings.setting, ref checking_value: real) {
         var counter : int;
         try {
             var tea_prob = open (setting_var.test_problem_filename, ioMode.r);

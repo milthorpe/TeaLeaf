@@ -17,7 +17,7 @@ module settings{
   enum Solver {Jacobi, CG, Chebyshev, PPCG}
   enum Geometry {RECTANGULAR, CIRCULAR, POINT}
 
-  class setting {   
+  record setting {   
     var test_problem_filename: string;
     var tea_in_filename: string;
     var tea_out_filename: string;
@@ -44,7 +44,7 @@ module settings{
     var num_states: int;
     var halo_depth: int(32);
     var is_offload: bool;
-    var fields_to_exchange: [0..<NUM_FIELDS] bool;
+    var fields_to_exchange: NUM_FIELDS * bool;
     var solver: Solver;
     var dx: real;
     var dy: real;
@@ -112,11 +112,11 @@ module settings{
   // Resets all of the fields to be exchanged
   proc reset_fields_to_exchange(ref setting_var : setting)
   {
-    setting_var.fields_to_exchange[0..<NUM_FIELDS] = false;
+    for i in 0..<NUM_FIELDS do setting_var.fields_to_exchange[i] = false;
   }
 
   // Checks if any of the fields are to be exchanged
-  proc is_fields_to_exchange(ref setting_var : setting)
+  proc is_fields_to_exchange(const setting_var: setting)
   {
     var flag : bool = false;
     for ii in 0..<NUM_FIELDS do 
